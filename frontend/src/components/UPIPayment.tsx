@@ -79,8 +79,8 @@ export default function UPIPayment({
         setError('');
 
         try {
-            // Verify payment with backend
-            const verifyResponse = await axios.post(
+            // First verify payment (marks as processing)
+            await axios.post(
                 `${API_BASE_URL}/api/payment/verify-upi`,
                 {
                     orderId: orderId,
@@ -90,13 +90,24 @@ export default function UPIPayment({
                 }
             );
 
-            if (verifyResponse.data.success) {
+            // Then confirm payment (marks as completed)
+            const confirmResponse = await axios.post(
+                `${API_BASE_URL}/api/payment/confirm-payment`,
+                {
+                    orderId: orderId,
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            if (confirmResponse.data.success) {
                 setStep('success');
                 setTimeout(() => {
                     onSuccess();
                 }, 2000);
             } else {
-                setError('Payment verification failed. Please try again.');
+                setError('Payment confirmation failed. Please try again.');
                 setStep('failed');
             }
         } catch (err: any) {
