@@ -20,13 +20,13 @@ interface UPIPaymentProps {
     merchantName: string;
 }
 
-export default function UPIPayment({ 
-    amount, 
-    orderId, 
-    onClose, 
+export default function UPIPayment({
+    amount,
+    orderId,
+    onClose,
     onSuccess,
     upiId,
-    merchantName 
+    merchantName
 }: UPIPaymentProps) {
     const { token } = useAuth();
     const [step, setStep] = useState<'details' | 'processing' | 'success' | 'failed'>('details');
@@ -57,9 +57,9 @@ export default function UPIPayment({
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Mask UPI ID for display: show first 4 characters and domain
+    // e.g., 8979594537@yescred -> 8979****@yescred
     const maskUPIId = (upiId: string): string => {
-        // Mask UPI ID: show first 4 characters and domain
-        // e.g., 8979594537@yescred -> 8979****@yescred
         const parts = upiId.split('@');
         if (parts.length === 2) {
             const username = parts[0];
@@ -76,6 +76,9 @@ export default function UPIPayment({
         return upiId;
     };
 
+    // Pre-compute masked UPI ID to ensure it's used
+    const maskedUPIId = maskUPIId(upiId);
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
@@ -85,10 +88,10 @@ export default function UPIPayment({
     const initiateUPI = () => {
         // Create UPI payment URL
         const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Payment for Order ${orderId}`)}`;
-        
+
         // Try to open UPI app
         window.location.href = upiUrl;
-        
+
         // Show processing state
         setStep('processing');
     };
@@ -171,9 +174,9 @@ export default function UPIPayment({
                             <h3>UPI Details</h3>
                             <div className="upi-id-box">
                                 <span className="upi-id" title={upiId}>
-                                    {maskUPIId(upiId)}
+                                    {maskedUPIId}
                                 </span>
-                                <button 
+                                <button
                                     onClick={() => copyToClipboard(upiId)}
                                     className="copy-btn"
                                     title="Copy Full UPI ID"
@@ -203,8 +206,8 @@ export default function UPIPayment({
                                 <ExternalLink size={20} />
                                 Open UPI App
                             </button>
-                            <button 
-                                onClick={handleVerifyPayment} 
+                            <button
+                                onClick={handleVerifyPayment}
                                 className="pay-btn secondary"
                                 disabled={verifying}
                             >
@@ -248,8 +251,8 @@ export default function UPIPayment({
                                 {error}
                             </div>
                         )}
-                        <button 
-                            onClick={handleVerifyPayment} 
+                        <button
+                            onClick={handleVerifyPayment}
                             className="pay-btn secondary"
                             disabled={verifying}
                         >
