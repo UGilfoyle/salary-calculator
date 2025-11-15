@@ -37,13 +37,13 @@ export class AtsCheck {
   @Column({ type: 'int' })
   fileSize: number;
 
-  @Column({ type: 'text', array: true, default: [] })
+  @Column({ type: 'jsonb', default: [] })
   suggestions: string[];
 
-  @Column({ type: 'text', array: true, default: [] })
+  @Column({ type: 'jsonb', default: [] })
   strengths: string[];
 
-  @Column({ type: 'text', array: true, default: [] })
+  @Column({ type: 'jsonb', default: [] })
   weaknesses: string[];
 
   @CreateDateColumn()
