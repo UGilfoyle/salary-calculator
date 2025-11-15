@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Calculator, MapPin, DollarSign, TrendingUp, Shield, LogOut, History } from 'lucide-react'
+import { Calculator, MapPin, DollarSign, TrendingUp, Shield, LogOut, History, FileText } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
+import AtsChecker from './components/AtsChecker'
 import './App.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -50,6 +51,7 @@ function App() {
   const [error, setError] = useState('')
   const [history, setHistory] = useState<any[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [activeTab, setActiveTab] = useState<'salary' | 'ats'>('salary')
 
   // Handle auth callback
   useEffect(() => {
@@ -199,9 +201,29 @@ function App() {
           </div>
         </header>
 
+        {/* Tabs */}
+        <div className="tabs">
+          <button
+            className={`tab-btn ${activeTab === 'salary' ? 'active' : ''}`}
+            onClick={() => setActiveTab('salary')}
+          >
+            <Calculator size={20} />
+            Salary Calculator
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'ats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ats')}
+          >
+            <FileText size={20} />
+            ATS Checker
+          </button>
+        </div>
+
         <div className="main-content">
-          {/* History Sidebar */}
-          {showHistory && (
+          {activeTab === 'salary' ? (
+            <>
+              {/* History Sidebar */}
+              {showHistory && (
             <div className="history-sidebar">
               <h3>Your Calculations</h3>
               {history.length === 0 ? (
@@ -402,7 +424,13 @@ function App() {
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            </>
+          ) : (
+            <div className="content-wrapper">
+              <AtsChecker />
+            </div>
+          )}
         </div>
       </div>
     </div>

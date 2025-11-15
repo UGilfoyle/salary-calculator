@@ -1,0 +1,282 @@
+.ats-checker {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.ats-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ats-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.ats-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
+.usage-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.reset-time {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.ats-form {
+  margin-bottom: 2rem;
+}
+
+.file-upload-area {
+  margin-bottom: 1rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f9fafb;
+  gap: 1rem;
+}
+
+.file-label:hover {
+  border-color: #111827;
+  background: #f3f4f6;
+}
+
+.file-label strong {
+  color: #111827;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.file-label span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.file-size {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+.check-btn {
+  width: 100%;
+  padding: 0.875rem;
+  background: #111827;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.check-btn:hover:not(:disabled) {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0.875rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  border: 1px solid #fecaca;
+  font-size: 0.875rem;
+}
+
+.ats-result {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.score-section {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.score-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.strengths-section,
+.weaknesses-section,
+.suggestions-section {
+  margin-bottom: 1.5rem;
+}
+
+.strengths-section h3,
+.weaknesses-section h3,
+.suggestions-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.75rem;
+}
+
+.strengths-section h3 {
+  color: #10b981;
+}
+
+.weaknesses-section h3 {
+  color: #ef4444;
+}
+
+.suggestions-section h3 {
+  color: #f59e0b;
+}
+
+.strengths-section ul,
+.weaknesses-section ul,
+.suggestions-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.strengths-section li,
+.weaknesses-section li,
+.suggestions-section li {
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #374151;
+  border-left: 3px solid;
+}
+
+.strengths-section li {
+  border-left-color: #10b981;
+}
+
+.weaknesses-section li {
+  border-left-color: #ef4444;
+}
+
+.suggestions-section li {
+  border-left-color: #f59e0b;
+}
+
+.remaining-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #374151;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .score-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .score-details {
+    width: 100%;
+  }
+}
+
