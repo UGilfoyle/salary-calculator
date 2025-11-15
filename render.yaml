@@ -3,8 +3,8 @@ services:
     name: salary-calculator-backend
     env: node
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start:prod
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm run start:prod"
     rootDir: backend
     envVars:
       - key: NODE_ENV
