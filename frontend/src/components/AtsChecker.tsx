@@ -389,6 +389,11 @@ export default function AtsChecker() {
                                         key={check.id}
                                         className="ats-history-item"
                                         onClick={() => {
+                                            if (!token) {
+                                                setError('Please log in to view check details');
+                                                return;
+                                            }
+                                            
                                             // Load full result from history
                                             axios.get(`${API_BASE_URL}/api/ats/history/${check.id}`, {
                                                 headers: { Authorization: `Bearer ${token}` },
@@ -410,9 +415,14 @@ export default function AtsChecker() {
                                                     detailedAnalysis: checkData.detailedAnalysis,
                                                 });
                                                 setShowHistory(false);
-                                            }).catch(err => {
-                                                console.error('Failed to load check:', err);
-                                                setError('Failed to load check details');
+                                            }).catch((err: any) => {
+                                                if (err.response?.status === 401) {
+                                                    setError('Your session has expired. Please log in again.');
+                                                    logout();
+                                                } else {
+                                                    console.error('Failed to load check:', err);
+                                                    setError(err.response?.data?.message || 'Failed to load check details');
+                                                }
                                             });
                                         }}
                                     >
