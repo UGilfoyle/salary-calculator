@@ -5,6 +5,7 @@ import { SalaryModule } from './salary/salary.module';
 import { AuthModule } from './auth/auth.module';
 import { AtsModule } from './ats/ats.module';
 import { PaymentModule } from './payment/payment.module';
+import { StatisticsModule } from './statistics/statistics.module';
 import { SalaryCalculation } from './salary/entities/salary-calculation.entity';
 import { CityTaxData } from './salary/entities/city-tax-data.entity';
 import { User } from './user/entities/user.entity';
@@ -36,6 +37,7 @@ import { Payment } from './payment/entities/payment.entity';
     AuthModule,
     AtsModule,
     PaymentModule,
+    StatisticsModule,
   ],
 })
 export class AppModule { }
