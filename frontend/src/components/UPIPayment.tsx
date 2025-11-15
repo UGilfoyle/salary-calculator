@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X, Smartphone, CreditCard, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 import './UPIPayment.css';
+
+const getApiBaseUrl = () => {
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    return url.replace(/\/+$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface UPIPaymentProps {
     amount: number;
