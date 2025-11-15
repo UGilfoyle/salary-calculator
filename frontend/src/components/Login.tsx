@@ -54,7 +54,7 @@ export default function Login() {
             <Sparkles size={48} />
           </div>
           <h1>Welcome to SalaryCalc</h1>
-          <p className="login-subtitle">Calculate your in-hand salary like a pro 💰</p>
+          <p className="login-subtitle">Calculate your in-hand salary</p>
         </div>
 
         <div className="login-content">

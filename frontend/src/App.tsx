@@ -178,8 +178,8 @@ function App() {
             <div className="header-content">
               <Calculator className="header-icon" size={32} />
               <div>
-                <h1>SalaryCalc 💰</h1>
-                <p className="subtitle">Calculate your in-hand salary like a pro</p>
+                <h1>SalaryCalc</h1>
+                <p className="subtitle">Calculate your in-hand salary</p>
               </div>
             </div>
             <div className="user-menu">
@@ -317,13 +317,13 @@ function App() {
               {error && <div className="error-message">{error}</div>}
 
               <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? 'Calculating...' : 'Calculate Salary 🚀'}
+                {loading ? 'Calculating...' : 'Calculate Salary'}
               </button>
             </form>
 
             {result && (
               <div className="result-card">
-                <h2>Your Salary Breakdown 📊</h2>
+                <h2>Salary Breakdown</h2>
                 
                 <div className="result-grid">
                   <div className="result-item highlight">

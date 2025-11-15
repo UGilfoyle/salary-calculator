@@ -4,55 +4,24 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-container::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    #667eea 0%,
-    #764ba2 25%,
-    #f093fb 50%,
-    #4facfe 75%,
-    #00f2fe 100%
-  );
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
-  opacity: 0.3;
-  z-index: 0;
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  background: #fafafa;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 32px;
+  background: white;
+  border-radius: 20px;
   padding: 3rem 2.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  max-width: 450px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  max-width: 420px;
   width: 100%;
-  position: relative;
-  z-index: 1;
-  animation: slideUp 0.5s ease-out;
+  animation: fadeIn 0.4s ease-out;
 }
 
-@keyframes slideUp {
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -67,36 +36,24 @@
 
 .sparkle-icon {
   display: inline-flex;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
+  padding: 0.75rem;
+  background: #111827;
+  color: white;
+  border-radius: 12px;
   margin-bottom: 1rem;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
 }
 
 .login-header h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
   margin-bottom: 0.5rem;
-  letter-spacing: -1px;
+  letter-spacing: -0.5px;
 }
 
 .login-subtitle {
-  font-size: 1.1rem;
-  color: #666;
+  font-size: 0.95rem;
+  color: #6b7280;
   font-weight: 400;
 }
 
@@ -109,27 +66,28 @@
 .auth-toggle {
   display: flex;
   gap: 0.5rem;
-  background: #f0f0f0;
+  background: #f3f4f6;
   padding: 0.25rem;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .toggle-btn {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.625rem;
   border: none;
   background: transparent;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  color: #666;
+  transition: all 0.2s ease;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .toggle-btn.active {
   background: white;
-  color: #667eea;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .github-section {
@@ -142,15 +100,15 @@
   display: flex;
   align-items: center;
   text-align: center;
-  color: #999;
-  font-size: 0.9rem;
+  color: #9ca3af;
+  font-size: 0.85rem;
 }
 
 .divider::before,
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .divider span {
@@ -173,91 +131,92 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 600;
-  color: #333;
-  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.form-group label svg {
+  color: #6b7280;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.875rem 1rem;
-  border: 2px solid #e0e0e0;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e5e7eb;
   border-radius: 10px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
   font-family: inherit;
+  color: #111827;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+.form-group input:hover {
+  border-color: #d1d5db;
 }
 
 .email-submit-btn {
   width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.875rem;
+  background: #111827;
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   margin-top: 0.5rem;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 .email-submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .email-submit-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .error-message {
-  background: #fee;
-  color: #c33;
+  background: #fef2f2;
+  color: #dc2626;
   padding: 0.875rem;
   border-radius: 10px;
-  font-size: 0.9rem;
-  border: 1px solid #fcc;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
   text-align: center;
-}
-
-.login-description {
-  text-align: center;
-  color: #555;
-  font-size: 0.95rem;
-  line-height: 1.6;
 }
 
 .github-login-btn {
   width: 100%;
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.5rem;
   background: #24292e;
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(36, 41, 46, 0.3);
+  transition: all 0.2s ease;
 }
 
 .github-login-btn:hover {
-  background: #2f363d;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(36, 41, 46, 0.4);
+  background: #1a1e22;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .github-login-btn:active {
@@ -269,6 +228,8 @@
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
 }
 
 .feature-item {
@@ -276,14 +237,14 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: #f8f9fa;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  color: #555;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
 }
 
 .feature-emoji {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {
@@ -292,7 +253,6 @@
   }
 
   .login-header h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 }
-
