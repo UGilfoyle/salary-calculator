@@ -22,9 +22,20 @@ export default function Login() {
   const [error, setError] = useState('');
 
   const handleGitHubLogin = () => {
+    // Debug: Log the environment variable
+    console.log('VITE_API_URL from env:', import.meta.env.VITE_API_URL);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    
     // Ensure no double slashes
     const githubUrl = `${API_BASE_URL}/api/auth/github`.replace(/([^:]\/)\/+/g, '$1');
-    console.log('Redirecting to:', githubUrl); // Debug log
+    console.log('Redirecting to:', githubUrl);
+    
+    if (API_BASE_URL.includes('localhost')) {
+      console.error('⚠️ WARNING: Using localhost! VITE_API_URL is not set in Vercel environment variables.');
+      alert('Configuration Error: API URL is not set. Please set VITE_API_URL in Vercel environment variables.');
+      return;
+    }
+    
     window.location.href = githubUrl;
   };
 
