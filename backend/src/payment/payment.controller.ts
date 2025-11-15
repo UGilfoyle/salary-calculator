@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -8,46 +8,99 @@ import { User } from '../user/entities/user.entity';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @Post('create-order')
+  @Post('create-upi-order')
   @UseGuards(JwtAuthGuard)
-  async createOrder(@CurrentUser() user: User) {
+  async createUPIOrder(
+    @CurrentUser() user: User,
+    @Body() body: { checkId?: string },
+  ) {
     const amount = 99; // ₹99 INR
-    const receipt = `ats_premium_${user.id}_${Date.now()}`;
     
-    const order = await this.paymentService.createOrder(amount, 'INR', receipt);
+    const order = await this.paymentService.createUPIOrder(
+      user.id,
+      amount,
+      body.checkId,
+    );
     
     return {
-      orderId: order.id,
+      orderId: order.orderId,
       amount: order.amount,
-      currency: order.currency,
-      key: process.env.RAZORPAY_KEY_ID, // Frontend needs this for Razorpay checkout
+      upiId: order.upiId,
+      merchantName: order.merchantName,
+      expiresAt: order.expiresAt,
     };
   }
 
-  @Post('verify')
+  @Post('verify-upi')
   @UseGuards(JwtAuthGuard)
-  async verifyPayment(
+  async verifyUPIPayment(
     @CurrentUser() user: User,
-    @Body() body: { orderId: string; paymentId: string; signature: string },
+    @Body() body: { 
+      orderId: string; 
+      upiTransactionId?: string; 
+      upiReferenceId?: string;
+    },
   ) {
-    const isValid = await this.paymentService.verifyPayment(
+    const payment = await this.paymentService.verifyPayment(
       body.orderId,
-      body.paymentId,
-      body.signature,
+      user.id,
+      body.upiTransactionId,
+      body.upiReferenceId,
     );
 
-    if (isValid) {
-      // Payment verified - you can save premium status to user here
-      return {
-        success: true,
-        message: 'Payment verified successfully',
-      };
-    }
+    return {
+      success: true,
+      payment: {
+        orderId: payment.orderId,
+        status: payment.status,
+        amount: payment.amount,
+      },
+    };
+  }
+
+  @Post('confirm-payment')
+  @UseGuards(JwtAuthGuard)
+  async confirmPayment(
+    @CurrentUser() user: User,
+    @Body() body: { orderId: string },
+  ) {
+    const payment = await this.paymentService.confirmPayment(
+      body.orderId,
+      user.id,
+    );
 
     return {
-      success: false,
-      message: 'Payment verification failed',
+      success: true,
+      payment: {
+        orderId: payment.orderId,
+        status: payment.status,
+        amount: payment.amount,
+        checkId: payment.checkId,
+      },
     };
+  }
+
+  @Get('status/:orderId')
+  @UseGuards(JwtAuthGuard)
+  async getPaymentStatus(
+    @CurrentUser() user: User,
+    @Param('orderId') orderId: string,
+  ) {
+    const payment = await this.paymentService.getPaymentStatus(orderId, user.id);
+    
+    return {
+      orderId: payment.orderId,
+      status: payment.status,
+      amount: payment.amount,
+      createdAt: payment.createdAt,
+      expiresAt: payment.expiresAt,
+    };
+  }
+
+  @Get('upi-details')
+  @UseGuards(JwtAuthGuard)
+  async getUPIDetails() {
+    return this.paymentService.getUPIDetails();
   }
 }
 

@@ -1,0 +1,362 @@
+.upi-payment-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.upi-payment-modal {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    z-index: 10;
+}
+
+.close-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.payment-content {
+    text-align: center;
+}
+
+.payment-header {
+    margin-bottom: 2rem;
+}
+
+.payment-icon {
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.payment-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.5rem;
+}
+
+.payment-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+}
+
+.payment-details {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #111827;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.upi-section {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 2px solid #0ea5e9;
+}
+
+.upi-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem;
+    text-align: left;
+}
+
+.upi-id-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #0ea5e9;
+    margin-bottom: 0.5rem;
+}
+
+.upi-id {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+.copy-btn {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn:hover {
+    background: #0284c7;
+    transform: scale(1.05);
+}
+
+.upi-hint {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0;
+    text-align: left;
+}
+
+.timer-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #fef3c7;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    color: #92400e;
+    font-weight: 500;
+}
+
+.payment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.pay-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.pay-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.pay-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.pay-btn.secondary {
+    background: #f3f4f6;
+    color: #111827;
+    border: 2px solid #e5e7eb;
+}
+
+.pay-btn.secondary:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+}
+
+.payment-instructions {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: left;
+    border: 1px solid #e5e7eb;
+}
+
+.payment-instructions h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 1rem;
+}
+
+.payment-instructions ol {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #374151;
+    font-size: 0.9rem;
+    line-height: 1.8;
+}
+
+.payment-instructions li {
+    margin-bottom: 0.5rem;
+}
+
+/* Processing State */
+.payment-content.processing {
+    padding: 3rem 2rem;
+}
+
+.processing-animation {
+    margin-bottom: 2rem;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #f3f4f6;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.payment-content.processing h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.5rem;
+}
+
+.payment-content.processing p {
+    color: #6b7280;
+    margin: 0 0 2rem;
+}
+
+/* Success State */
+.payment-content.success {
+    padding: 3rem 2rem;
+}
+
+.success-icon {
+    color: #10b981;
+    margin-bottom: 1.5rem;
+    animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
+.payment-content.success h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.5rem;
+}
+
+.payment-content.success p {
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Failed State */
+.payment-content.failed {
+    padding: 3rem 2rem;
+}
+
+.error-icon {
+    color: #ef4444;
+    margin-bottom: 1.5rem;
+}
+
+.payment-content.failed h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.5rem;
+}
+
+.payment-content.failed p {
+    color: #6b7280;
+    margin: 0 0 2rem;
+}
+
+@media (max-width: 768px) {
+    .upi-payment-modal {
+        padding: 1.5rem;
+        max-height: 95vh;
+    }
+
+    .payment-amount {
+        font-size: 2rem;
+    }
+
+    .upi-id {
+        font-size: 0.95rem;
+    }
+}
+
