@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Smartphone, CreditCard, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
+import { X, Smartphone, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './UPIPayment.css';
@@ -55,6 +55,25 @@ export default function UPIPayment({
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const maskUPIId = (upiId: string): string => {
+        // Mask UPI ID: show first 4 characters and domain
+        // e.g., 8979594537@yescred -> 8979****@yescred
+        const parts = upiId.split('@');
+        if (parts.length === 2) {
+            const username = parts[0];
+            const domain = parts[1];
+            if (username.length > 4) {
+                return `${username.substring(0, 4)}${'*'.repeat(Math.min(username.length - 4, 6))}@${domain}`;
+            }
+            return `${username.substring(0, 2)}${'*'.repeat(Math.max(username.length - 2, 2))}@${domain}`;
+        }
+        // Fallback: mask middle part
+        if (upiId.length > 8) {
+            return `${upiId.substring(0, 4)}${'*'.repeat(upiId.length - 8)}${upiId.substring(upiId.length - 4)}`;
+        }
+        return upiId;
     };
 
     const copyToClipboard = (text: string) => {
