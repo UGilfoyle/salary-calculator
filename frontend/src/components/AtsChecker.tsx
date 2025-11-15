@@ -5,12 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import UPIPayment from './UPIPayment';
 import './AtsChecker.css';
 
-declare global {
-    interface Window {
-        Razorpay: any;
-    }
-}
-
 const getApiBaseUrl = () => {
     const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     return url.replace(/\/+$/, ''); // Remove trailing slashes
