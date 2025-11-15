@@ -103,7 +103,7 @@ export class AtsController {
         @Body() body: { checkId: string; resumeText: string },
     ) {
         const check = await this.atsService.getCheckById(body.checkId, user.id);
-        
+
         // Reconstruct check result from saved data
         const checkResult = {
             score: check.score,

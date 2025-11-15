@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Upload, CheckCircle, XCircle, AlertCircle, Clock, History, TrendingUp, Building2, Sparkles, Zap } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import UnderConstruction from './UnderConstruction';
 import './AtsChecker.css';
 
 declare global {
@@ -74,6 +75,7 @@ export default function AtsChecker() {
     const [resumeText, setResumeText] = useState<string>('');
     const [loadingPremium, setLoadingPremium] = useState(false);
     const [currentCheckId, setCurrentCheckId] = useState<string | null>(null);
+    const [showUnderConstruction, setShowUnderConstruction] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -279,7 +281,7 @@ export default function AtsChecker() {
                         color: '#111827',
                     },
                     modal: {
-                        ondismiss: function() {
+                        ondismiss: function () {
                             setLoadingPremium(false);
                         },
                     },
@@ -296,7 +298,15 @@ export default function AtsChecker() {
     };
 
     return (
-        <div className="ats-checker">
+        <>
+            {showUnderConstruction && (
+                <UnderConstruction 
+                    onClose={() => setShowUnderConstruction(false)}
+                    title="Payment Gateway Under Construction"
+                    message="We're working hard to bring you a seamless payment experience. Premium features will be available soon! Stay tuned for updates."
+                />
+            )}
+            <div className="ats-checker">
             <div className="ats-header">
                 <FileText size={24} />
                 <div>
@@ -503,8 +513,8 @@ export default function AtsChecker() {
                                                     <p>Get scores for 8 top companies (Amazon, Microsoft, Meta, Apple, Netflix, Uber) + Advanced optimization tips</p>
                                                 </div>
                                             </div>
-                                            <button 
-                                                onClick={handlePremiumUpgrade} 
+                                            <button
+                                                onClick={handlePremiumUpgrade}
                                                 className="premium-upgrade-btn"
                                                 disabled={loadingPremium}
                                             >
@@ -635,6 +645,7 @@ export default function AtsChecker() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 
