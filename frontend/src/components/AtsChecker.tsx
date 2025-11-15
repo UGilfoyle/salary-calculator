@@ -204,6 +204,97 @@ export default function AtsChecker() {
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     };
 
+    const handlePremiumUpgrade = async () => {
+        if (!currentCheckId || !resumeText) {
+            setError('Unable to process premium upgrade. Please check your resume again.');
+            return;
+        }
+
+        setLoadingPremium(true);
+        setError('');
+
+        try {
+            // Create Razorpay order
+            const orderResponse = await axios.post(
+                `${API_BASE_URL}/api/payment/create-order`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+
+            const { orderId, amount, key } = orderResponse.data;
+
+            // Load Razorpay script
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => {
+                const options = {
+                    key: key,
+                    amount: amount,
+                    currency: 'INR',
+                    name: 'SalaryCalc',
+                    description: 'ATS Resume Enhancement - Premium Features',
+                    order_id: orderId,
+                    handler: async function (response: any) {
+                        // Verify payment
+                        try {
+                            await axios.post(
+                                `${API_BASE_URL}/api/payment/verify`,
+                                {
+                                    orderId: response.razorpay_order_id,
+                                    paymentId: response.razorpay_payment_id,
+                                    signature: response.razorpay_signature,
+                                },
+                                {
+                                    headers: { Authorization: `Bearer ${token}` },
+                                }
+                            );
+
+                            // Get premium enhancements
+                            const enhanceResponse = await axios.post(
+                                `${API_BASE_URL}/api/ats/premium/enhance`,
+                                {
+                                    checkId: currentCheckId,
+                                    resumeText: resumeText,
+                                },
+                                {
+                                    headers: { Authorization: `Bearer ${token}` },
+                                }
+                            );
+
+                            setResult(enhanceResponse.data);
+                            setLoadingPremium(false);
+                        } catch (err: any) {
+                            setError(err.response?.data?.message || 'Failed to verify payment');
+                            setLoadingPremium(false);
+                        }
+                    },
+                    prefill: {
+                        name: 'User',
+                        email: '',
+                        contact: '',
+                    },
+                    theme: {
+                        color: '#111827',
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            setLoadingPremium(false);
+                        },
+                    },
+                };
+
+                const razorpay = new window.Razorpay(options);
+                razorpay.open();
+            };
+            document.body.appendChild(script);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to initiate payment');
+            setLoadingPremium(false);
+        }
+    };
+
     return (
         <div className="ats-checker">
             <div className="ats-header">
