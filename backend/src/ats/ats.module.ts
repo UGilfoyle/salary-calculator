@@ -5,9 +5,9 @@ import { AtsService } from './ats.service';
 import { AtsUsage } from './entities/ats-usage.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AtsUsage])],
-  controllers: [AtsController],
-  providers: [AtsService],
+    imports: [TypeOrmModule.forFeature([AtsUsage])],
+    controllers: [AtsController],
+    providers: [AtsService],
 })
-export class AtsModule {}
+export class AtsModule { }
 

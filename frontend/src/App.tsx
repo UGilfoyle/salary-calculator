@@ -6,7 +6,12 @@ import Login from './components/Login'
 import AtsChecker from './components/AtsChecker'
 import './App.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const getApiBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  return url.replace(/\/+$/, ''); // Remove trailing slashes
+};
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface SalaryData {
   ctc: string
@@ -224,206 +229,206 @@ function App() {
             <>
               {/* History Sidebar */}
               {showHistory && (
-            <div className="history-sidebar">
-              <h3>Your Calculations</h3>
-              {history.length === 0 ? (
-                <p className="no-history">No calculations yet. Start calculating!</p>
-              ) : (
-                <div className="history-list">
-                  {history.map((calc) => (
-                    <div key={calc.id} className="history-item" onClick={() => {
-                      setResult({
-                        ctc: parseFloat(calc.ctc),
-                        fixedCtc: parseFloat(calc.fixedCtc),
-                        variablePay: parseFloat(calc.variablePay || '0'),
-                        insurance: parseFloat(calc.insurance || '0'),
-                        basicSalary: parseFloat(calc.basicSalary),
-                        hra: parseFloat(calc.hra),
-                        specialAllowance: parseFloat(calc.specialAllowance),
-                        pf: parseFloat(calc.pf),
-                        esi: parseFloat(calc.esi),
-                        professionalTax: parseFloat(calc.professionalTax),
-                        incomeTax: parseFloat(calc.incomeTax),
-                        inHandSalary: parseFloat(calc.inHandSalary),
-                        monthlyDeductions: parseFloat(calc.monthlyDeductions),
-                        annualDeductions: parseFloat(calc.annualDeductions),
-                      })
-                      setShowHistory(false)
-                    }}>
-                      <div className="history-item-header">
-                        <span className="history-ctc">₹{parseFloat(calc.ctc).toLocaleString('en-IN')}</span>
-                        <span className="history-city">{calc.city}</span>
-                      </div>
-                      <div className="history-item-details">
-                        <span>In-hand: ₹{parseFloat(calc.inHandSalary).toLocaleString('en-IN')}</span>
-                        <span className="history-date">
-                          {new Date(calc.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                <div className="history-sidebar">
+                  <h3>Your Calculations</h3>
+                  {history.length === 0 ? (
+                    <p className="no-history">No calculations yet. Start calculating!</p>
+                  ) : (
+                    <div className="history-list">
+                      {history.map((calc) => (
+                        <div key={calc.id} className="history-item" onClick={() => {
+                          setResult({
+                            ctc: parseFloat(calc.ctc),
+                            fixedCtc: parseFloat(calc.fixedCtc),
+                            variablePay: parseFloat(calc.variablePay || '0'),
+                            insurance: parseFloat(calc.insurance || '0'),
+                            basicSalary: parseFloat(calc.basicSalary),
+                            hra: parseFloat(calc.hra),
+                            specialAllowance: parseFloat(calc.specialAllowance),
+                            pf: parseFloat(calc.pf),
+                            esi: parseFloat(calc.esi),
+                            professionalTax: parseFloat(calc.professionalTax),
+                            incomeTax: parseFloat(calc.incomeTax),
+                            inHandSalary: parseFloat(calc.inHandSalary),
+                            monthlyDeductions: parseFloat(calc.monthlyDeductions),
+                            annualDeductions: parseFloat(calc.annualDeductions),
+                          })
+                          setShowHistory(false)
+                        }}>
+                          <div className="history-item-header">
+                            <span className="history-ctc">₹{parseFloat(calc.ctc).toLocaleString('en-IN')}</span>
+                            <span className="history-city">{calc.city}</span>
+                          </div>
+                          <div className="history-item-details">
+                            <span>In-hand: ₹{parseFloat(calc.inHandSalary).toLocaleString('en-IN')}</span>
+                            <span className="history-date">
+                              {new Date(calc.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="content-wrapper">
-            <form onSubmit={handleSubmit} className="form-card">
-              <div className="form-section">
-                <label htmlFor="ctc">
-                  <DollarSign size={20} />
-                  CTC (Cost to Company) *
-                </label>
-                <input
-                  id="ctc"
-                  type="number"
-                  placeholder="Enter your annual CTC"
-                  value={formData.ctc}
-                  onChange={(e) => setFormData({ ...formData, ctc: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-section">
-                <label htmlFor="city">
-                  <MapPin size={20} />
-                  City *
-                </label>
-                <select
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  required
-                >
-                  <option value="">Select your city</option>
-                  {indianCities.map(city => (
-                    <option key={city} value={city}>{city}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-section">
-                <label htmlFor="variablePay">
-                  <TrendingUp size={20} />
-                  Variable Pay (Annual, Optional)
-                </label>
-                <input
-                  id="variablePay"
-                  type="number"
-                  placeholder="Enter variable pay/bonus (e.g., 50000)"
-                  value={formData.variablePay}
-                  onChange={(e) => setFormData({ ...formData, variablePay: e.target.value })}
-                />
-                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                  Part of CTC but not included in monthly salary
-                </small>
-              </div>
-
-              <div className="form-section">
-                <label htmlFor="insurance">
-                  <Shield size={20} />
-                  Insurance (Annual, Optional)
-                </label>
-                <input
-                  id="insurance"
-                  type="number"
-                  placeholder="Enter insurance premium (e.g., 15000)"
-                  value={formData.insurance}
-                  onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
-                />
-                <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                  Health/Life insurance premiums (part of CTC, not monthly salary)
-                </small>
-              </div>
-
-              {error && <div className="error-message">{error}</div>}
-
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? 'Calculating...' : 'Calculate Salary'}
-              </button>
-            </form>
-
-            {result && (
-              <div className="result-card">
-                <h2>Salary Breakdown</h2>
-                
-                <div className="result-grid">
-                  <div className="result-item highlight">
-                    <span className="label">In-Hand Salary (Monthly)</span>
-                    <span className="value">₹{result.inHandSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+              <div className="content-wrapper">
+                <form onSubmit={handleSubmit} className="form-card">
+                  <div className="form-section">
+                    <label htmlFor="ctc">
+                      <DollarSign size={20} />
+                      CTC (Cost to Company) *
+                    </label>
+                    <input
+                      id="ctc"
+                      type="number"
+                      placeholder="Enter your annual CTC"
+                      value={formData.ctc}
+                      onChange={(e) => setFormData({ ...formData, ctc: e.target.value })}
+                      required
+                    />
                   </div>
 
-                  <div className="result-item">
-                    <span className="label">Total Annual CTC</span>
-                    <span className="value">₹{result.ctc.toLocaleString('en-IN')}</span>
+                  <div className="form-section">
+                    <label htmlFor="city">
+                      <MapPin size={20} />
+                      City *
+                    </label>
+                    <select
+                      id="city"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      required
+                    >
+                      <option value="">Select your city</option>
+                      {indianCities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="result-item">
-                    <span className="label">Fixed CTC (Annual)</span>
-                    <span className="value">₹{result.fixedCtc.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                  <div className="form-section">
+                    <label htmlFor="variablePay">
+                      <TrendingUp size={20} />
+                      Variable Pay (Annual, Optional)
+                    </label>
+                    <input
+                      id="variablePay"
+                      type="number"
+                      placeholder="Enter variable pay/bonus (e.g., 50000)"
+                      value={formData.variablePay}
+                      onChange={(e) => setFormData({ ...formData, variablePay: e.target.value })}
+                    />
+                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                      Part of CTC but not included in monthly salary
+                    </small>
                   </div>
 
-                  {result.variablePay > 0 && (
-                    <div className="result-item" style={{ opacity: 0.8 }}>
-                      <span className="label">Variable Pay (Annual)</span>
-                      <span className="value">₹{result.variablePay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                  <div className="form-section">
+                    <label htmlFor="insurance">
+                      <Shield size={20} />
+                      Insurance (Annual, Optional)
+                    </label>
+                    <input
+                      id="insurance"
+                      type="number"
+                      placeholder="Enter insurance premium (e.g., 15000)"
+                      value={formData.insurance}
+                      onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
+                    />
+                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                      Health/Life insurance premiums (part of CTC, not monthly salary)
+                    </small>
+                  </div>
+
+                  {error && <div className="error-message">{error}</div>}
+
+                  <button type="submit" className="submit-btn" disabled={loading}>
+                    {loading ? 'Calculating...' : 'Calculate Salary'}
+                  </button>
+                </form>
+
+                {result && (
+                  <div className="result-card">
+                    <h2>Salary Breakdown</h2>
+
+                    <div className="result-grid">
+                      <div className="result-item highlight">
+                        <span className="label">In-Hand Salary (Monthly)</span>
+                        <span className="value">₹{result.inHandSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item">
+                        <span className="label">Total Annual CTC</span>
+                        <span className="value">₹{result.ctc.toLocaleString('en-IN')}</span>
+                      </div>
+
+                      <div className="result-item">
+                        <span className="label">Fixed CTC (Annual)</span>
+                        <span className="value">₹{result.fixedCtc.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      {result.variablePay > 0 && (
+                        <div className="result-item" style={{ opacity: 0.8 }}>
+                          <span className="label">Variable Pay (Annual)</span>
+                          <span className="value">₹{result.variablePay.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+
+                      {result.insurance > 0 && (
+                        <div className="result-item" style={{ opacity: 0.8 }}>
+                          <span className="label">Insurance (Annual)</span>
+                          <span className="value">₹{result.insurance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        </div>
+                      )}
+
+                      <div className="result-item">
+                        <span className="label">Basic Salary (Monthly)</span>
+                        <span className="value">₹{result.basicSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item">
+                        <span className="label">HRA (Monthly)</span>
+                        <span className="value">₹{result.hra.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item">
+                        <span className="label">Special Allowance (Monthly)</span>
+                        <span className="value">₹{result.specialAllowance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item deduction">
+                        <span className="label">EPF (Monthly)</span>
+                        <span className="value">-₹{result.pf.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item deduction">
+                        <span className="label">ESI (Monthly)</span>
+                        <span className="value">-₹{result.esi.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item deduction">
+                        <span className="label">Professional Tax (Monthly)</span>
+                        <span className="value">-₹{result.professionalTax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item deduction">
+                        <span className="label">Income Tax (Monthly)</span>
+                        <span className="value">-₹{result.incomeTax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item total-deduction">
+                        <span className="label">Total Monthly Deductions</span>
+                        <span className="value">-₹{result.monthlyDeductions.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
+
+                      <div className="result-item total-deduction">
+                        <span className="label">Total Annual Deductions</span>
+                        <span className="value">-₹{result.annualDeductions.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                      </div>
                     </div>
-                  )}
-
-                  {result.insurance > 0 && (
-                    <div className="result-item" style={{ opacity: 0.8 }}>
-                      <span className="label">Insurance (Annual)</span>
-                      <span className="value">₹{result.insurance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
-
-                  <div className="result-item">
-                    <span className="label">Basic Salary (Monthly)</span>
-                    <span className="value">₹{result.basicSalary.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                   </div>
-
-                  <div className="result-item">
-                    <span className="label">HRA (Monthly)</span>
-                    <span className="value">₹{result.hra.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item">
-                    <span className="label">Special Allowance (Monthly)</span>
-                    <span className="value">₹{result.specialAllowance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item deduction">
-                    <span className="label">EPF (Monthly)</span>
-                    <span className="value">-₹{result.pf.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item deduction">
-                    <span className="label">ESI (Monthly)</span>
-                    <span className="value">-₹{result.esi.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item deduction">
-                    <span className="label">Professional Tax (Monthly)</span>
-                    <span className="value">-₹{result.professionalTax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item deduction">
-                    <span className="label">Income Tax (Monthly)</span>
-                    <span className="value">-₹{result.incomeTax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item total-deduction">
-                    <span className="label">Total Monthly Deductions</span>
-                    <span className="value">-₹{result.monthlyDeductions.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-
-                  <div className="result-item total-deduction">
-                    <span className="label">Total Annual Deductions</span>
-                    <span className="value">-₹{result.annualDeductions.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-              </div>
-            )}
+                )}
               </div>
             </>
           ) : (

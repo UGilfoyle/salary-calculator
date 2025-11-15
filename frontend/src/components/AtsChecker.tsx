@@ -4,7 +4,12 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './AtsChecker.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  return url.replace(/\/+$/, ''); // Remove trailing slashes
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface AtsResult {
     score: number;

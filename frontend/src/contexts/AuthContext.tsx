@@ -2,7 +2,12 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  return url.replace(/\/+$/, ''); // Remove trailing slashes
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface User {
   id: string;

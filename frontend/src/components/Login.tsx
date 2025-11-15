@@ -4,7 +4,13 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getApiBaseUrl = () => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  // Remove trailing slash and ensure clean URL
+  return url.replace(/\/+$/, '');
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export default function Login() {
   const { login: authLogin } = useAuth();
@@ -16,8 +22,10 @@ export default function Login() {
   const [error, setError] = useState('');
 
   const handleGitHubLogin = () => {
-    const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-    window.location.href = `${baseUrl}/api/auth/github`;
+    // Ensure no double slashes
+    const githubUrl = `${API_BASE_URL}/api/auth/github`.replace(/([^:]\/)\/+/g, '$1');
+    console.log('Redirecting to:', githubUrl); // Debug log
+    window.location.href = githubUrl;
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
