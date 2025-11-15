@@ -129,6 +129,10 @@ export default function AtsChecker() {
             const formData = new FormData();
             formData.append('file', file);
 
+            // Store resume text for premium features
+            const fileText = await file.text();
+            setResumeText(fileText);
+
             const response = await axios.post<AtsResult>(
                 `${API_BASE_URL}/api/ats/check`,
                 formData,
@@ -143,6 +147,12 @@ export default function AtsChecker() {
             setResult(response.data);
             setUsage({ remaining: response.data.remaining, resetAt: response.data.resetAt });
             loadHistory(); // Refresh history after new check
+            // Get check ID from the latest history item after loading
+            setTimeout(() => {
+                if (history.length > 0) {
+                    setCurrentCheckId(history[0].id);
+                }
+            }, 500);
         } catch (err: any) {
             if (err.response?.status === 403) {
                 setError(err.response.data.message || 'You have reached the limit of 3 checks');
@@ -165,6 +175,10 @@ export default function AtsChecker() {
                 }
             );
             setHistory(response.data);
+            // Set current check ID from latest history item
+            if (response.data.length > 0 && !currentCheckId) {
+                setCurrentCheckId(response.data[0].id);
+            }
         } catch (err) {
             console.error('Failed to load history:', err);
         }
@@ -351,6 +365,9 @@ export default function AtsChecker() {
                                     <h3>
                                         <Building2 size={20} />
                                         Company Match Scores
+                                        {!result.premiumFeatures && (
+                                            <span className="premium-badge">Free - 2 Companies</span>
+                                        )}
                                     </h3>
                                     <div className="company-cards">
                                         <div className="company-card">
@@ -367,7 +384,48 @@ export default function AtsChecker() {
                                             </div>
                                             <div className="company-match">{result.companyComparisons.google.match}</div>
                                         </div>
+                                        {/* Premium: Show all companies */}
+                                        {result.premiumFeatures && result.companyComparisons.allCompanies && (
+                                            <>
+                                                {Object.entries(result.companyComparisons.allCompanies)
+                                                    .filter(([company]) => company !== 'goldmanSachs' && company !== 'google')
+                                                    .map(([company, data]) => (
+                                                        <div key={company} className="company-card premium">
+                                                            <div className="company-name">
+                                                                {company.charAt(0).toUpperCase() + company.slice(1).replace(/([A-Z])/g, ' $1')}
+                                                            </div>
+                                                            <div className="company-score" style={{ color: getScoreColor(data.score) }}>
+                                                                {data.score}
+                                                            </div>
+                                                            <div className="company-match">{data.match}</div>
+                                                        </div>
+                                                    ))}
+                                            </>
+                                        )}
                                     </div>
+                                    {!result.premiumFeatures && (
+                                        <div className="premium-upgrade-section">
+                                            <div className="premium-info">
+                                                <Sparkles size={24} />
+                                                <div>
+                                                    <h4>Unlock Premium Features</h4>
+                                                    <p>Get scores for 8 top companies (Amazon, Microsoft, Meta, Apple, Netflix, Uber) + Advanced optimization tips</p>
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={handlePremiumUpgrade} 
+                                                className="premium-upgrade-btn"
+                                                disabled={loadingPremium}
+                                            >
+                                                {loadingPremium ? 'Processing...' : (
+                                                    <>
+                                                        <Zap size={18} />
+                                                        Upgrade for ₹99
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
