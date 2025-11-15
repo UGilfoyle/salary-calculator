@@ -1,9 +1,11 @@
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import * as pdfParse from 'pdf-parse';
 import * as mammoth from 'mammoth';
 import { AtsUsage } from './entities/ats-usage.entity';
+
+// Import pdf-parse with proper type handling
+const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string }>;
 
 export interface AtsCheckResult {
   score: number;
