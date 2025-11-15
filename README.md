@@ -152,9 +152,14 @@ GITHUB_CLIENT_ID=your_github_client_id_here
 GITHUB_CLIENT_SECRET=your_github_client_secret_here
 GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/github/callback
 
-# JWT Secret (Generate: openssl rand -base64 32)
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-```
+       # JWT Secret (Generate: openssl rand -base64 32)
+       JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+       # UPI Payment Configuration
+       UPI_ID=your-upi-id@paytm  # Your UPI ID (e.g., yourname@paytm, yourname@ybl, etc.)
+       MERCHANT_NAME=SalaryCalc   # Your business/merchant name
+       PAYMENT_SECRET=your-payment-secret-key  # Secret key for payment verification (optional, auto-generated if not provided)
+       ```
 
 ### Frontend (.env)
 
