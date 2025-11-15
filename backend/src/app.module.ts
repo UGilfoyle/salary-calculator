@@ -7,6 +7,7 @@ import { AtsModule } from './ats/ats.module';
 import { SalaryCalculation } from './salary/entities/salary-calculation.entity';
 import { User } from './user/entities/user.entity';
 import { AtsUsage } from './ats/entities/ats-usage.entity';
+import { AtsCheck } from './ats/entities/ats-check.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { AtsUsage } from './ats/entities/ats-usage.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'salary_calculator',
-      entities: [SalaryCalculation, User, AtsUsage],
+      entities: [SalaryCalculation, User, AtsUsage, AtsCheck],
       synchronize: process.env.NODE_ENV !== 'production', // Auto-sync in dev only
       logging: process.env.NODE_ENV === 'development',
       ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,

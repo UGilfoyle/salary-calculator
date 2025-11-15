@@ -1,6 +1,7 @@
 import {
     Controller,
     Post,
+    Get,
     UseGuards,
     UseInterceptors,
     UploadedFile,
@@ -64,6 +65,9 @@ export class AtsController {
         const result = await this.atsService.checkAts(resumeText);
         result.fileSize = file.size;
 
+        // Save check result to database
+        await this.atsService.saveCheckResult(user.id, result);
+
         // Record usage
         await this.atsService.recordUsage(user.id);
 
@@ -75,6 +79,12 @@ export class AtsController {
             remaining: updatedUsage.remaining,
             resetAt: updatedUsage.resetAt,
         };
+    }
+
+    @Get('history')
+    @UseGuards(JwtAuthGuard)
+    async getHistory(@CurrentUser() user: User) {
+        return this.atsService.getUserChecks(user.id);
     }
 
     @Post('usage')

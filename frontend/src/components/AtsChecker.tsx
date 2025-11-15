@@ -5,8 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import './AtsChecker.css';
 
 const getApiBaseUrl = () => {
-  const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  return url.replace(/\/+$/, ''); // Remove trailing slashes
+    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    return url.replace(/\/+$/, ''); // Remove trailing slashes
 };
 
 const API_BASE_URL = getApiBaseUrl();

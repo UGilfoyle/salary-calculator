@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import * as mammoth from 'mammoth';
 import { AtsUsage } from './entities/ats-usage.entity';
+import { AtsCheck } from './entities/ats-check.entity';
 
 // Import pdf-parse with proper type handling
 const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string }>;
@@ -39,6 +40,8 @@ export class AtsService {
   constructor(
     @InjectRepository(AtsUsage)
     private atsUsageRepository: Repository<AtsUsage>,
+    @InjectRepository(AtsCheck)
+    private atsCheckRepository: Repository<AtsCheck>,
   ) {}
 
   async checkUsageLimit(userId: string): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
@@ -201,6 +204,29 @@ export class AtsService {
       fileSize: 0, // Will be set by controller
       wordCount,
     };
+  }
+
+  async saveCheckResult(userId: string, result: AtsCheckResult): Promise<AtsCheck> {
+    const check = this.atsCheckRepository.create({
+      userId,
+      score: result.score,
+      keywordMatches: result.keywordMatches,
+      totalKeywords: result.totalKeywords,
+      wordCount: result.wordCount,
+      fileSize: result.fileSize,
+      suggestions: result.suggestions,
+      strengths: result.strengths,
+      weaknesses: result.weaknesses,
+    });
+    return await this.atsCheckRepository.save(check);
+  }
+
+  async getUserChecks(userId: string): Promise<AtsCheck[]> {
+    return this.atsCheckRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: 50, // Limit to last 50 checks
+    });
   }
 }
 
