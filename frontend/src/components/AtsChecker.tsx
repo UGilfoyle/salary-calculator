@@ -141,10 +141,6 @@ export default function AtsChecker() {
             const formData = new FormData();
             formData.append('file', file);
 
-            // Store resume text for premium features
-            const fileText = await file.text();
-            setResumeText(fileText);
-
             const response = await axios.post<AtsResult>(
                 `${API_BASE_URL}/api/ats/check`,
                 formData,
@@ -158,13 +154,19 @@ export default function AtsChecker() {
 
             setResult(response.data);
             setUsage({ remaining: response.data.remaining, resetAt: response.data.resetAt });
+            // Store check ID from response if available, or get from history
+            if (response.data.checkId) {
+                setCurrentCheckId(response.data.checkId);
+            }
             loadHistory(); // Refresh history after new check
-            // Get check ID from the latest history item after loading
-            setTimeout(() => {
-                if (history.length > 0) {
-                    setCurrentCheckId(history[0].id);
-                }
-            }, 500);
+            // Get check ID from the latest history item after loading if not in response
+            if (!response.data.checkId) {
+                setTimeout(() => {
+                    if (history.length > 0) {
+                        setCurrentCheckId(history[0].id);
+                    }
+                }, 500);
+            }
         } catch (err: any) {
             if (err.response?.status === 401) {
                 setError('Your session has expired. Please log in again.');
