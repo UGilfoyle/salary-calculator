@@ -47,7 +47,7 @@ export class AtsController {
     async checkResume(
         @UploadedFile() file: Express.Multer.File,
         @CurrentUser() user: User,
-    ): Promise<AtsCheckResult & { remaining: number; resetAt: Date }> {
+    ): Promise<AtsCheckResult & { remaining: number; resetAt: Date; checkId: string }> {
         try {
             if (!file) {
                 throw new BadRequestException('No file uploaded');
