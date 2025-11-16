@@ -6,7 +6,16 @@ import { AtsUsage } from './entities/ats-usage.entity';
 import { AtsCheck } from './entities/ats-check.entity';
 
 // Import pdf-parse with proper type handling
-const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string }>;
+let pdfParse: (buffer: Buffer) => Promise<{ text: string }>;
+try {
+  const pdfParseLib = require('pdf-parse');
+  pdfParse = pdfParseLib.default || pdfParseLib;
+} catch (error) {
+  console.error('Failed to load pdf-parse:', error);
+  pdfParse = async (buffer: Buffer) => {
+    throw new BadRequestException('PDF parsing is not available');
+  };
+}
 
 export interface AtsCheckResult {
   score: number;
