@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, TrendingUp, DollarSign, FileText, BarChart3, 
   UserCheck, UserX, Shield, Search, Edit, Trash2, 
-  Calendar, ArrowUp, ArrowDown, RefreshCw 
+  Calendar, ArrowUp, RefreshCw 
 } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
