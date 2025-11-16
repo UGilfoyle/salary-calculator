@@ -1,7 +1,8 @@
 import { DataSource } from 'typeorm';
 import { SalaryCalculation } from './salary/entities/salary-calculation.entity';
-import { User } from './user/entities/user.entity';
+import { User, UserRole } from './user/entities/user.entity';
 import * as dotenv from 'dotenv';
+import * as bcrypt from 'bcryptjs';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,22 @@ async function seed() {
       .execute();
     console.log('🗑️  Cleared existing data');
 
+    // Create admin user first
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const adminUser = userRepository.create({
+      email: 'admin@salarycalc.com',
+      password: adminPassword,
+      username: 'admin',
+      displayName: 'Admin User',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Admin&background=667eea&color=fff',
+      role: UserRole.ADMIN,
+      isActive: true,
+    });
+    await userRepository.save(adminUser);
+    console.log('👑 Created admin user');
+    console.log('   Email: admin@salarycalc.com');
+    console.log('   Password: admin123');
+
     // Create a test user for seed data
     const testUser = userRepository.create({
       githubId: 'seed_user_12345',
@@ -49,6 +66,8 @@ async function seed() {
       avatarUrl: 'https://github.com/github.png',
       email: 'test@example.com',
       githubProfile: 'https://github.com/testuser',
+      role: UserRole.USER,
+      isActive: true,
     });
     const savedUser = await userRepository.save(testUser);
     console.log('👤 Created test user');
