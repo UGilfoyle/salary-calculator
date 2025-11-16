@@ -432,6 +432,10 @@ function App() {
                 )}
               </div>
             </>
+          ) : activeTab === 'admin' ? (
+            <div className="content-wrapper">
+              <AdminDashboard />
+            </div>
           ) : (
             <div className="content-wrapper">
               <AtsChecker />
