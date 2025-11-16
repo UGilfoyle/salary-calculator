@@ -223,10 +223,11 @@ function App() {
             <FileText size={20} />
             ATS Checker
           </button>
-          {(user.role === 'admin' || user.isAdmin) && (
+          {(user.role === 'admin' || user.isAdmin === true) && (
             <button
               className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`}
               onClick={() => setActiveTab('admin')}
+              title="Admin Dashboard"
             >
               <BarChart3 size={20} />
               Admin Dashboard

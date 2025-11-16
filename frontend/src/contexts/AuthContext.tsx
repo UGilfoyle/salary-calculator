@@ -56,8 +56,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${tokenToVerify}` },
       });
-      setUser(response.data);
+      // Ensure role and isAdmin are set correctly
+      const userData = {
+        ...response.data,
+        role: response.data.role || 'user',
+        isAdmin: response.data.isAdmin || response.data.role === 'admin',
+      };
+      setUser(userData);
       setToken(tokenToVerify);
+      // Update localStorage with fresh user data
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       // Token invalid, clear storage
       localStorage.removeItem('token');
