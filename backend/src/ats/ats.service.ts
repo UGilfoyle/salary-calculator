@@ -7,23 +7,33 @@ import { AtsCheck } from './entities/ats-check.entity';
 
 // Import pdf-parse with proper type handling
 // pdf-parse is a CommonJS module that exports a function directly
-let pdfParse: (buffer: Buffer) => Promise<{ text: string }>;
-try {
-  const pdfParseLib = require('pdf-parse');
-  // pdf-parse exports the function directly (not as default)
-  if (typeof pdfParseLib === 'function') {
-    pdfParse = pdfParseLib;
-  } else if (pdfParseLib && typeof pdfParseLib.default === 'function') {
-    pdfParse = pdfParseLib.default;
-  } else {
-    throw new Error('pdf-parse module format is unexpected');
+let pdfParse: (buffer: Buffer) => Promise<{ text: string }> | null = null;
+
+// Lazy load pdf-parse to handle both development and production environments
+const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: string }>> => {
+  if (pdfParse) {
+    return pdfParse;
   }
-} catch (error) {
-  console.error('Failed to load pdf-parse:', error);
-  pdfParse = async (buffer: Buffer) => {
-    throw new BadRequestException('PDF parsing is not available. Please ensure pdf-parse is installed.');
-  };
-}
+
+  try {
+    // Try CommonJS require first
+    const pdfParseLib = require('pdf-parse');
+    
+    if (typeof pdfParseLib === 'function') {
+      pdfParse = pdfParseLib;
+      return pdfParse;
+    } else if (pdfParseLib && typeof pdfParseLib.default === 'function') {
+      pdfParse = pdfParseLib.default;
+      return pdfParse;
+    } else {
+      throw new Error('pdf-parse module format is unexpected');
+    }
+  } catch (error) {
+    console.error('Failed to load pdf-parse:', error);
+    console.error('Error details:', error instanceof Error ? error.stack : error);
+    throw new BadRequestException('PDF parsing is not available. Please ensure pdf-parse is installed in the backend.');
+  }
+};
 
 export interface AtsCheckResult {
   score: number;
@@ -197,7 +207,8 @@ export class AtsService {
       
       if (file.mimetype === 'application/pdf') {
         try {
-          const data = await pdfParse(file.buffer);
+          const pdfParser = await loadPdfParse();
+          const data = await pdfParser(file.buffer);
           // Handle different return types from pdf-parse
           if (typeof data === 'string') {
             text = data;
@@ -212,6 +223,9 @@ export class AtsService {
         } catch (pdfError) {
           console.error('PDF parsing error details:', pdfError);
           const errorMessage = pdfError instanceof Error ? pdfError.message : 'Unknown error';
+          if (pdfError instanceof BadRequestException) {
+            throw pdfError;
+          }
           throw new BadRequestException(`Failed to parse PDF file: ${errorMessage}. Please ensure the file is not password-protected or corrupted.`);
         }
       } else if (
