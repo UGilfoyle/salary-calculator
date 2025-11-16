@@ -63,26 +63,64 @@ export class SalaryService {
 
     // Standard salary structure: 50% Basic, 40% HRA, 10% Special Allowance
     // Based on fixed CTC only (excluding variable pay and insurance)
-    const basicSalary = (fixedCtc * 0.5) / 12;
-    const hra = (fixedCtc * 0.4) / 12;
-    const specialAllowance = (fixedCtc * 0.1) / 12;
+    const basicSalaryAnnual = fixedCtc * 0.5;
+    const hraAnnual = fixedCtc * 0.4;
+    const specialAllowanceAnnual = fixedCtc * 0.1;
+    
+    const basicSalary = basicSalaryAnnual / 12;
+    const hra = hraAnnual / 12;
+    const specialAllowance = specialAllowanceAnnual / 12;
     const grossMonthly = basicSalary + hra + specialAllowance;
 
-    // EPF: 12% of basic (employee contribution)
-    const pf = basicSalary * 0.12;
+    // EPF: 12% of basic (employee contribution), capped at ₹1,800/month (12% of ₹15,000)
+    // EPF is calculated on basic salary, but contribution is capped
+    const pfContributionRate = 0.12;
+    const pfMaxBasic = 15000; // EPF cap basic salary
+    const pfApplicableBasic = Math.min(basicSalary, pfMaxBasic);
+    const pf = pfApplicableBasic * pfContributionRate;
 
-    // ESI: 0.75% of gross (if applicable, typically for salary < 21,000)
-    const esi = grossMonthly < 21000 ? grossMonthly * 0.0075 : 0;
+    // ESI: 0.75% of gross (if applicable, typically for gross salary <= ₹21,000)
+    const esiThreshold = 21000;
+    const esi = grossMonthly <= esiThreshold ? grossMonthly * 0.0075 : 0;
 
     // Professional Tax (varies by state) - fetch from database
     const professionalTax = await this.getProfessionalTax(city, grossMonthly);
 
-    // Income Tax calculation (simplified, based on new tax regime)
-    // Tax is calculated on fixed CTC (variable pay may be taxed separately when received)
-    const annualTaxableIncome =
-      fixedCtc - pf * 12 * 2 - esi * 12 * 2 - professionalTax * 12;
-    const incomeTax = this.calculateIncomeTax(annualTaxableIncome) / 12;
+    // HRA Exemption Calculation (for tax purposes)
+    // HRA exemption is minimum of:
+    // 1. Actual HRA received
+    // 2. Rent paid - 10% of basic salary
+    // 3. 50% of basic (metro) or 40% (non-metro)
+    // For calculation purposes, we'll assume standard exemption (50% for metro, 40% for non-metro)
+    const metroCities = ['Mumbai', 'Delhi', 'Kolkata', 'Chennai'];
+    const isMetro = metroCities.includes(city);
+    const hraExemptionPercent = isMetro ? 0.5 : 0.4;
+    const hraExemptionAnnual = Math.min(
+      hraAnnual,
+      basicSalaryAnnual * hraExemptionPercent
+    );
+    const taxableHraAnnual = hraAnnual - hraExemptionAnnual;
 
+    // Annual Taxable Income Calculation (New Tax Regime)
+    // Taxable Income = Gross Annual - Standard Deduction - EPF (employee) - ESI (employee) - Professional Tax
+    // Standard Deduction: ₹50,000 (for new tax regime)
+    const standardDeduction = 50000;
+    const pfAnnual = pf * 12;
+    const esiAnnual = esi * 12;
+    const professionalTaxAnnual = professionalTax * 12;
+    
+    // Gross Annual = Basic + HRA (taxable portion) + Special Allowance
+    const grossAnnual = basicSalaryAnnual + taxableHraAnnual + specialAllowanceAnnual;
+    
+    // Taxable Income after deductions
+    const annualTaxableIncome = Math.max(0, 
+      grossAnnual - standardDeduction - pfAnnual - esiAnnual - professionalTaxAnnual
+    );
+    
+    const incomeTaxAnnual = this.calculateIncomeTax(annualTaxableIncome);
+    const incomeTax = incomeTaxAnnual / 12;
+
+    // Monthly deductions
     const monthlyDeductions = pf + esi + professionalTax + incomeTax;
     const inHandSalary = grossMonthly - monthlyDeductions;
     const annualDeductions = monthlyDeductions * 12;

@@ -325,8 +325,9 @@ export class AtsService {
     };
 
     // Detailed analysis metrics
+    // Keyword density: number of matched keywords per 1000 words
     const keywordDensity = wordCount > 0 
-      ? Math.round((keywordMatches / wordCount) * 1000 * 100) / 100 
+      ? Math.round((matchedKeywords.length / wordCount) * 1000 * 100) / 100 
       : 0; // per 1000 words
     
     // Section completeness (0-100)
@@ -355,13 +356,14 @@ export class AtsService {
     const foundTechSkills = techKeywords.filter(keyword => lowerText.includes(keyword));
     const technicalSkills = Math.min(Math.round((foundTechSkills.length / techKeywords.length) * 100), 100);
 
-    // Calculate overall score (0-100)
-    const keywordScore = (keywordMatches / totalKeywords) * 40; // 40% weight
-    const lengthScore = Math.min(wordCount / 500, 1) * 20; // 20% weight
-    const sectionScore = (sectionCompleteness / 100) * 20; // 20% weight
-    const actionVerbScore = (actionVerbUsage / 100) * 10; // 10% weight
-    const quantifiableScore = (quantifiableResults / 100) * 10; // 10% weight
-    const score = Math.round(keywordScore + lengthScore + sectionScore + actionVerbScore + quantifiableScore);
+    // Calculate overall score (0-100) with improved weighting
+    // Ensure all scores are properly normalized
+    const keywordScore = Math.min((keywordMatches / totalKeywords) * 100, 100) * 0.35; // 35% weight
+    const lengthScore = Math.min(Math.max(wordCount / 500, 0), 1) * 100 * 0.20; // 20% weight (optimal: 400-600 words)
+    const sectionScore = sectionCompleteness * 0.25; // 25% weight
+    const actionVerbScore = actionVerbUsage * 0.10; // 10% weight
+    const quantifiableScore = quantifiableResults * 0.10; // 10% weight
+    const score = Math.min(Math.round(keywordScore + lengthScore + sectionScore + actionVerbScore + quantifiableScore), 100);
 
     // Generate suggestions
     const suggestions: string[] = [];
