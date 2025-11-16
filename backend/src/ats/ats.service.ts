@@ -6,16 +6,29 @@ import { AtsUsage } from './entities/ats-usage.entity';
 import { AtsCheck } from './entities/ats-check.entity';
 
 // Import pdf-parse with proper type handling
-let pdfParse: (buffer: Buffer) => Promise<{ text: string }>;
-try {
-  const pdfParseLib = require('pdf-parse');
-  pdfParse = pdfParseLib.default || pdfParseLib;
-} catch (error) {
-  console.error('Failed to load pdf-parse:', error);
-  pdfParse = async (buffer: Buffer) => {
-    throw new BadRequestException('PDF parsing is not available');
-  };
-}
+// Use dynamic require to handle CommonJS module
+const pdfParse = (() => {
+  try {
+    const pdfParseLib = require('pdf-parse');
+    // Handle both default export and named export
+    if (typeof pdfParseLib === 'function') {
+      return pdfParseLib;
+    }
+    if (pdfParseLib.default && typeof pdfParseLib.default === 'function') {
+      return pdfParseLib.default;
+    }
+    // If it's an object with a function property
+    if (pdfParseLib.pdfParse && typeof pdfParseLib.pdfParse === 'function') {
+      return pdfParseLib.pdfParse;
+    }
+    throw new Error('pdf-parse module not found or invalid');
+  } catch (error) {
+    console.error('Failed to load pdf-parse:', error);
+    return async (buffer: Buffer) => {
+      throw new BadRequestException('PDF parsing is not available. Please ensure pdf-parse is installed.');
+    };
+  }
+})();
 
 export interface AtsCheckResult {
   score: number;
@@ -188,8 +201,24 @@ export class AtsService {
       let text = '';
       
       if (file.mimetype === 'application/pdf') {
-        const data = await pdfParse(file.buffer);
-        text = data.text || '';
+        try {
+          const data = await pdfParse(file.buffer);
+          // Handle different return types from pdf-parse
+          if (typeof data === 'string') {
+            text = data;
+          } else if (data && typeof data === 'object' && 'text' in data) {
+            text = data.text || '';
+          } else {
+            text = String(data || '');
+          }
+          if (typeof text !== 'string') {
+            text = String(text);
+          }
+        } catch (pdfError) {
+          console.error('PDF parsing error details:', pdfError);
+          const errorMessage = pdfError instanceof Error ? pdfError.message : 'Unknown error';
+          throw new BadRequestException(`Failed to parse PDF file: ${errorMessage}. Please ensure the file is not password-protected or corrupted.`);
+        }
       } else if (
         file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         file.mimetype === 'application/msword'
