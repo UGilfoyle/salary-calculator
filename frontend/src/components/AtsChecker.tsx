@@ -66,7 +66,6 @@ export default function AtsChecker() {
     const [usage, setUsage] = useState<{ remaining: number; resetAt: string } | null>(null);
     const [history, setHistory] = useState<AtsHistoryItem[]>([]);
     const [showHistory, setShowHistory] = useState(false);
-    const [resumeText, setResumeText] = useState<string>('');
     const [loadingPremium, setLoadingPremium] = useState(false);
     const [currentCheckId, setCurrentCheckId] = useState<string | null>(null);
     const [showUPIPayment, setShowUPIPayment] = useState(false);
