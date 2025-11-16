@@ -69,8 +69,8 @@ export class AtsController {
             const result = await this.atsService.checkAts(resumeText);
             result.fileSize = file.size;
 
-            // Save check result to database
-            await this.atsService.saveCheckResult(user.id, result);
+            // Save check result to database (including resume text for premium features)
+            const savedCheck = await this.atsService.saveCheckResult(user.id, result, resumeText);
 
             // Record usage
             await this.atsService.recordUsage(user.id);
@@ -80,6 +80,7 @@ export class AtsController {
 
             return {
                 ...result,
+                checkId: savedCheck.id,
                 remaining: updatedUsage.remaining,
                 resetAt: updatedUsage.resetAt,
             };
