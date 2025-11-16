@@ -11,6 +11,7 @@ let pdfjsLib: any = null;
 let pdfjsLoadError: Error | null = null;
 
 // Lazy load pdfjs-dist to handle both development and production environments
+// pdfjs-dist is an ES module, so we must use dynamic import
 const loadPdfJs = async () => {
   if (pdfjsLib) {
     return pdfjsLib;
@@ -22,24 +23,16 @@ const loadPdfJs = async () => {
   }
 
   try {
-    // Try to load pdfjs-dist
-    try {
-      pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-      console.log('pdfjs-dist loaded successfully');
-    } catch (requireError) {
-      console.error('require("pdfjs-dist") failed:', requireError);
-      
-      // Try alternative import path
-      try {
-        pdfjsLib = await import('pdfjs-dist');
-        pdfjsLib = pdfjsLib.default || pdfjsLib;
-        console.log('pdfjs-dist loaded via import');
-      } catch (importError) {
-        console.error('import("pdfjs-dist") failed:', importError);
-        throw new Error(`Failed to load pdfjs-dist: require error: ${requireError}, import error: ${importError}`);
-      }
+    // pdfjs-dist is an ES module, so we must use dynamic import
+    const pdfjsModule = await import('pdfjs-dist');
+    pdfjsLib = pdfjsModule.default || pdfjsModule;
+    
+    // Verify getDocument is available
+    if (!pdfjsLib || typeof pdfjsLib.getDocument !== 'function') {
+      throw new Error('pdfjs-dist loaded but getDocument function is not available');
     }
     
+    console.log('pdfjs-dist loaded successfully');
     return pdfjsLib;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
