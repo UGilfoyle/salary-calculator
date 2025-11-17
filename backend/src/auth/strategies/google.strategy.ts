@@ -10,15 +10,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
     const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL') || 'http://localhost:3000/api/auth/google/callback';
 
-    // This should only be called if credentials exist (module checks before providing)
-    // But add safety check anyway
-    if (!clientID || !clientSecret) {
-      throw new Error('Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.');
-    }
-
+    // If credentials are missing, use placeholder values to prevent crash
+    // The routes will check and return appropriate error messages
     super({
-      clientID: clientID,
-      clientSecret: clientSecret,
+      clientID: clientID || 'not-configured',
+      clientSecret: clientSecret || 'not-configured',
       callbackURL: callbackURL,
       scope: ['email', 'profile'],
     });

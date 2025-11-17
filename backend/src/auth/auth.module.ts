@@ -11,21 +11,13 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 function createProviders() {
-  // Check environment variables directly (available at module definition time)
-  const clientID = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const hasGoogleCredentials = !!(clientID && clientSecret);
-
+  // Always include GoogleStrategy - it will handle missing credentials gracefully
   const providers: any[] = [
     AuthService,
     GitHubStrategy,
+    GoogleStrategy,
     JwtStrategy,
   ];
-
-  // Only add GoogleStrategy if credentials are available
-  if (hasGoogleCredentials) {
-    providers.push(GoogleStrategy);
-  }
 
   return providers;
 }
