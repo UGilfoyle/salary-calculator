@@ -5,78 +5,76 @@ import * as mammoth from 'mammoth';
 import { AtsUsage } from './entities/ats-usage.entity';
 import { AtsCheck } from './entities/ats-check.entity';
 
-// Import pdf-parse for PDF parsing (CommonJS compatible)
-// Using pdf-parse v1.1.1 which is stable and CommonJS compatible
-let pdfParse: ((buffer: Buffer) => Promise<{ text: string }>) | null = null;
-let pdfParseLoadError: Error | null = null;
+// PDF parsing using pdfjs-dist with dynamic import for ESM compatibility
+let pdfjsLib: any = null;
+let pdfjsLoadError: Error | null = null;
 
-// Lazy load pdf-parse to handle both development and production environments
-const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: string }>> => {
-  if (pdfParse) {
-    return pdfParse;
+// Lazy load pdfjs-dist using dynamic import
+const loadPdfJs = async (): Promise<any> => {
+  if (pdfjsLib) {
+    return pdfjsLib;
   }
 
-  // If we've already tried and failed, throw the cached error
-  if (pdfParseLoadError) {
-    throw pdfParseLoadError;
+  if (pdfjsLoadError) {
+    throw pdfjsLoadError;
   }
 
   try {
-    // pdf-parse is a CommonJS module, use require()
-    const pdfParseModule = require('pdf-parse');
+    // Use dynamic import for ESM compatibility
+    const pdfjsModule = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    pdfjsLib = pdfjsModule;
     
-    // pdf-parse exports the function directly
-    if (typeof pdfParseModule === 'function') {
-      pdfParse = pdfParseModule;
-    } else if (pdfParseModule && typeof pdfParseModule.default === 'function') {
-      pdfParse = pdfParseModule.default;
-    } else if (pdfParseModule && typeof pdfParseModule.pdfParse === 'function') {
-      pdfParse = pdfParseModule.pdfParse;
-    } else {
-      throw new Error('pdf-parse module format is unexpected. Got type: ' + typeof pdfParseModule);
+    // Set worker source (required for pdfjs-dist)
+    if (typeof window === 'undefined') {
+      // Node.js environment - use node worker
+      const pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default || pdfjsWorker;
     }
     
-    console.log('pdf-parse loaded successfully');
-    return pdfParse;
+    console.log('pdfjs-dist loaded successfully');
+    return pdfjsLib;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    console.error('Failed to load pdf-parse:', errorMessage);
-    if (errorStack) {
-      console.error('Error stack:', errorStack);
-    }
+    console.error('Failed to load pdfjs-dist:', errorMessage);
     
     const finalError = new BadRequestException(
-      `PDF parsing is not available. Please ensure pdf-parse is installed in the backend. Error: ${errorMessage}`
+      `PDF parsing is not available. Please ensure pdfjs-dist is installed. Error: ${errorMessage}`
     );
-    pdfParseLoadError = finalError;
+    pdfjsLoadError = finalError;
     throw finalError;
   }
 };
 
-// Function to extract text from PDF using pdf-parse
+// Function to extract text from PDF using pdfjs-dist
 const extractTextFromPdf = async (buffer: Buffer): Promise<string> => {
-  const pdfParser = await loadPdfParse();
+  const pdfjs = await loadPdfJs();
   
   try {
-    // Parse PDF and extract text
-    const data = await pdfParser(buffer);
+    // Load the PDF document
+    const loadingTask = pdfjs.getDocument({ data: buffer });
+    const pdfDocument = await loadingTask.promise;
     
-    // pdf-parse returns an object with a 'text' property
-    let text = '';
-    if (typeof data === 'string') {
-      text = data;
-    } else if (data && typeof data === 'object' && 'text' in data) {
-      text = data.text || '';
-    } else {
-      text = String(data || '');
+    let fullText = '';
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Combine text items from the page
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += pageText + '\n';
     }
     
-    return text.trim();
+    return fullText.trim();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new BadRequestException(`Failed to parse PDF: ${errorMessage}. Please ensure the file is not password-protected or corrupted.`);
+    throw new BadRequestException(
+      `Failed to parse PDF: ${errorMessage}. Please ensure the file is not password-protected or corrupted.`
+    );
   }
 };
 
@@ -190,6 +188,7 @@ export class AtsService {
     private atsCheckRepository: Repository<AtsCheck>,
   ) {}
 
+
   async checkUsageLimit(userId: string): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
     const resetTime = new Date();
     resetTime.setHours(resetTime.getHours() - this.RESET_HOURS);
@@ -289,7 +288,7 @@ export class AtsService {
     }
   }
 
-  async checkAts(resumeText: string): Promise<AtsCheckResult> {
+  async checkAts(resumeText: string, isPremium: boolean = false): Promise<AtsCheckResult> {
     if (!resumeText || resumeText.trim().length === 0) {
       throw new BadRequestException('Resume text is empty');
     }
@@ -316,9 +315,10 @@ export class AtsService {
     }
 
     // For free version, show only Goldman Sachs and Google
+    // Premium users get all companies
     const goldmanScore = companyScores.goldmanSachs?.score || 0;
     const googleScore = companyScores.google?.score || 0;
-
+    
     // Determine match level
     const getMatchLevel = (score: number): string => {
       if (score >= 70) return 'Excellent Match';
@@ -326,6 +326,14 @@ export class AtsService {
       if (score >= 30) return 'Fair Match';
       return 'Needs Improvement';
     };
+
+    // Only include all companies for premium users
+    const allCompanyScores = isPremium 
+      ? Object.entries(companyScores).reduce((acc, [company, data]) => {
+          acc[company] = { score: data.score, match: getMatchLevel(data.score) };
+          return acc;
+        }, {} as Record<string, { score: number; match: string }>)
+      : undefined;
 
     // Detailed analysis metrics
     // Keyword density: number of matched keywords per 1000 words
@@ -448,12 +456,6 @@ export class AtsService {
       suggestions.push('For Google: Emphasize algorithms, system design, distributed systems, and technical depth');
     }
 
-    // Store all company scores for premium features
-    const allCompanyScores = Object.entries(companyScores).reduce((acc, [company, data]) => {
-      acc[company] = { score: data.score, match: getMatchLevel(data.score) };
-      return acc;
-    }, {} as Record<string, { score: number; match: string }>);
-
     return {
       score,
       suggestions,
@@ -472,7 +474,7 @@ export class AtsService {
           score: googleScore,
           match: getMatchLevel(googleScore),
         },
-        allCompanies: allCompanyScores, // For premium
+        allCompanies: allCompanyScores, // Only for premium users
       },
       detailedAnalysis: {
         keywordDensity,

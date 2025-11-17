@@ -52,6 +52,12 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isPremium: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  premiumExpiresAt: Date;
+
   @OneToMany(() => SalaryCalculation, (calculation) => calculation.user)
   calculations: SalaryCalculation[];
 

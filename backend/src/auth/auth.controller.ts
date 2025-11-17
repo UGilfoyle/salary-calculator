@@ -43,6 +43,11 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: User) {
+    const now = new Date();
+    const isPremiumActive = user.isPremium && 
+      user.premiumExpiresAt && 
+      new Date(user.premiumExpiresAt) > now;
+
     return {
       id: user.id,
       username: user.username,
@@ -53,6 +58,8 @@ export class AuthController {
       linkedinProfile: user.linkedinProfile,
       role: user.role,
       isAdmin: user.role === 'admin',
+      isPremium: isPremiumActive,
+      premiumExpiresAt: user.premiumExpiresAt ? user.premiumExpiresAt.toISOString() : null,
     };
   }
 

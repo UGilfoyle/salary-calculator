@@ -19,6 +19,8 @@ interface User {
   linkedinProfile?: string;
   role?: 'user' | 'admin';
   isAdmin?: boolean;
+  isPremium?: boolean;
+  premiumExpiresAt?: string;
 }
 
 interface AuthContextType {

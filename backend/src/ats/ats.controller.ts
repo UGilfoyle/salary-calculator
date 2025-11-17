@@ -71,8 +71,14 @@ export class AtsController {
             // Parse file
             const resumeText = await this.atsService.parseFile(file);
 
+            // Check if user is premium
+            const now = new Date();
+            const isPremium = user.isPremium && 
+              user.premiumExpiresAt && 
+              user.premiumExpiresAt > now;
+
             // Check ATS
-            const result = await this.atsService.checkAts(resumeText);
+            const result = await this.atsService.checkAts(resumeText, isPremium);
             result.fileSize = file.size;
 
             // Save check result to database (including resume text for premium features)

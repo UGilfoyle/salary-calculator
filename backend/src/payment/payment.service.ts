@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Payment, PaymentStatus } from './entities/payment.entity';
+import { User } from '../user/entities/user.entity';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -10,11 +11,14 @@ export class PaymentService {
   private readonly UPI_ID: string;
   private readonly MERCHANT_NAME: string;
   private readonly PAYMENT_SECRET: string;
+  private readonly PREMIUM_DURATION_DAYS = 30; // Premium valid for 30 days per payment
 
   constructor(
     private configService: ConfigService,
     @InjectRepository(Payment)
     private paymentRepository: Repository<Payment>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {
     this.UPI_ID = this.configService.get<string>('UPI_ID') || '';
     this.MERCHANT_NAME = this.configService.get<string>('MERCHANT_NAME') || 'SalaryCalc';
@@ -118,6 +122,28 @@ export class PaymentService {
     // Mark as completed
     payment.status = PaymentStatus.COMPLETED;
     await this.paymentRepository.save(payment);
+
+    // Activate premium status for user
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      const now = new Date();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + this.PREMIUM_DURATION_DAYS);
+
+      // If user already has premium and it hasn't expired, extend it
+      if (user.isPremium && user.premiumExpiresAt && user.premiumExpiresAt > now) {
+        // Extend from current expiration date
+        const currentExpiry = new Date(user.premiumExpiresAt);
+        currentExpiry.setDate(currentExpiry.getDate() + this.PREMIUM_DURATION_DAYS);
+        user.premiumExpiresAt = currentExpiry;
+      } else {
+        // Set new premium expiration
+        user.isPremium = true;
+        user.premiumExpiresAt = expiresAt;
+      }
+
+      await this.userRepository.save(user);
+    }
 
     return payment;
   }
