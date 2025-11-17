@@ -25,6 +25,9 @@ export class City {
   @Column({ type: 'int', default: 0 })
   usageCount: number; // Track how often this city is used
 
+  @Column({ type: 'int', default: 999 })
+  priority: number; // Lower number = higher priority (top cities first)
+
   @CreateDateColumn()
   createdAt: Date;
 

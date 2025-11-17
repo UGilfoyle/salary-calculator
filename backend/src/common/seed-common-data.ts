@@ -19,47 +19,64 @@ const AppDataSource = new DataSource({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
-const cities = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata',
-  'Pune', 'Ahmedabad', 'Jaipur', 'Surat', 'Lucknow', 'Kanpur',
-  'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna',
-  'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 'Faridabad',
-  'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Amritsar', 'Aurangabad',
-  'Dhanbad', 'Allahabad', 'Ranchi', 'Howrah', 'Coimbatore', 'Jabalpur',
-  'Gwalior', 'Vijayawada', 'Jodhpur', 'Madurai', 'Raipur', 'Kota',
-  'Guwahati', 'Chandigarh', 'Solapur', 'Hubli', 'Tiruchirappalli', 'Bareilly',
-  'Moradabad', 'Mysore', 'Gurgaon', 'Aligarh', 'Jalandhar', 'Tirunelveli',
-  'Bhubaneswar', 'Salem', 'Warangal', 'Mira-Bhayandar', 'Thiruvananthapuram',
-  'Bhiwandi', 'Saharanpur', 'Guntur', 'Amravati', 'Bikaner', 'Noida',
-  'Jamshedpur', 'Bhilai', 'Cuttack', 'Firozabad', 'Kochi', 'Nellore',
-  'Bhavnagar', 'Dehradun', 'Durgapur', 'Asansol', 'Rourkela', 'Nanded',
-  'Kolhapur', 'Ajmer', 'Akola', 'Gulbarga', 'Jamnagar', 'Ujjain',
-  'Loni', 'Siliguri', 'Jhansi', 'Ulhasnagar', 'Jammu', 'Sangli-Miraj',
-  'Mangalore', 'Erode', 'Belgaum', 'Ambattur', 'Tirupati', 'Malegaon',
-  'Gaya', 'Jalgaon', 'Udaipur', 'Maheshtala', 'Tiruppur', 'Davanagere',
-  'Kozhikode', 'Kurnool', 'Rajpur Sonarpur', 'Rajahmundry', 'Bokaro',
-  'South Dumdum', 'Bellary', 'Patiala', 'Gopalpur', 'Agartala', 'Bhagalpur',
-  'Muzaffarnagar', 'Bhatpara', 'Panihati', 'Latur', 'Dhule', 'Rohtak',
-  'Korba', 'Bhilwara', 'Berhampur', 'Muzaffarpur', 'Ahmednagar', 'Mathura',
-  'Kollam', 'Avadi', 'Kadapa', 'Anantapur', 'Kamarhati', 'Sambalpur',
-  'Bilaspur', 'Shahjahanpur', 'Satara', 'Bijapur', 'Rampur', 'Shivamogga',
+// Top cities (Tier 1) - Priority 1-10
+const topCities = [
+  { name: 'Mumbai', priority: 1 },
+  { name: 'Delhi', priority: 2 },
+  { name: 'Bangalore', priority: 3 },
+  { name: 'Hyderabad', priority: 4 },
+  { name: 'Chennai', priority: 5 },
+  { name: 'Kolkata', priority: 6 },
+  { name: 'Pune', priority: 7 },
+  { name: 'Ahmedabad', priority: 8 },
+  { name: 'Gurgaon', priority: 9 },
+  { name: 'Noida', priority: 10 },
+];
+
+// Tier 2 cities - Priority 11-30
+const tier2Cities = [
+  'Jaipur', 'Surat', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 
+  'Bhopal', 'Visakhapatnam', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana', 
+  'Agra', 'Nashik', 'Faridabad', 'Meerut', 'Rajkot', 'Varanasi', 'Srinagar',
+];
+
+// Other cities - Priority 31+ (excluding cities already in topCities and tier2Cities)
+const otherCities = [
+  'Amritsar', 'Aurangabad', 'Dhanbad', 'Allahabad', 'Ranchi', 'Howrah', 
+  'Coimbatore', 'Jabalpur', 'Gwalior', 'Vijayawada', 'Jodhpur', 'Madurai', 
+  'Raipur', 'Kota', 'Guwahati', 'Chandigarh', 'Solapur', 'Hubli', 
+  'Tiruchirappalli', 'Bareilly', 'Moradabad', 'Mysore', 'Aligarh', 
+  'Jalandhar', 'Tirunelveli', 'Bhubaneswar', 'Salem', 'Warangal', 
+  'Mira-Bhayandar', 'Thiruvananthapuram', 'Bhiwandi', 'Saharanpur', 
+  'Guntur', 'Amravati', 'Bikaner', 'Jamshedpur', 'Bhilai', 'Cuttack', 
+  'Firozabad', 'Kochi', 'Nellore', 'Bhavnagar', 'Dehradun', 'Durgapur', 
+  'Asansol', 'Rourkela', 'Nanded', 'Kolhapur', 'Ajmer', 'Akola', 
+  'Gulbarga', 'Jamnagar', 'Ujjain', 'Loni', 'Siliguri', 'Jhansi', 
+  'Ulhasnagar', 'Jammu', 'Sangli-Miraj', 'Mangalore', 'Erode', 'Belgaum', 
+  'Ambattur', 'Tirupati', 'Malegaon', 'Gaya', 'Jalgaon', 'Udaipur', 
+  'Maheshtala', 'Tiruppur', 'Davanagere', 'Kozhikode', 'Kurnool', 
+  'Rajpur Sonarpur', 'Rajahmundry', 'Bokaro', 'South Dumdum', 'Bellary', 
+  'Patiala', 'Gopalpur', 'Agartala', 'Bhagalpur', 'Muzaffarnagar', 
+  'Bhatpara', 'Panihati', 'Latur', 'Dhule', 'Rohtak', 'Korba', 'Bhilwara', 
+  'Berhampur', 'Muzaffarpur', 'Ahmednagar', 'Mathura', 'Kollam', 'Avadi', 
+  'Kadapa', 'Anantapur', 'Kamarhati', 'Sambalpur', 'Bilaspur', 
+  'Shahjahanpur', 'Satara', 'Bijapur', 'Rampur', 'Shivamogga', 
   'Chandrapur', 'Junagadh', 'Thrissur', 'Alwar', 'Bardhaman', 'Kulti',
   'Kakinada', 'Nizamabad', 'Parbhani', 'Tumkur', 'Khammam', 'Ozhukarai',
   'Bihar Sharif', 'Panipat', 'Darbhanga', 'Bally', 'Aizawl', 'Dewas',
   'Ichalkaranji', 'Karnal', 'Bathinda', 'Jalna', 'Eluru', 'Barasat',
-  'Kirari Suleman Nagar', 'Purnia', 'Satna', 'Mau', 'Sonipat', 'Farrukhabad',
-  'Sagar', 'Rourkela', 'Durg', 'Imphal', 'Ratlam', 'Hapur', 'Arrah',
-  'Karimnagar', 'Anantapur', 'Etawah', 'Bharatpur', 'Begusarai', 'New Delhi',
-  'Chhapra', 'Kadapa', 'Ramagundam', 'Pali', 'Satna', 'Vizianagaram',
-  'Katihar', 'Hardwar', 'Sonipat', 'Nagercoil', 'Thanjavur', 'Murwara',
-  'Naihati', 'Sambhal', 'Nadiad', 'Yamunanagar', 'English Bazar', 'Eluru',
-  'Munger', 'Panchkula', 'Raayachuru', 'Panvel', 'Deoghar', 'Ongole',
-  'Nandyal', 'Morena', 'Bhiwani', 'Porbandar', 'Palakkad', 'Anand',
-  'Pundri', 'Baharampur', 'Barmer', 'Morvi', 'Orai', 'Bahraich',
-  'Phagwara', 'Tinsukia', 'Guntakal', 'Srikakulam', 'Balasore', 'Ambikapur',
-  'Rewa', 'Raichur', 'Vrindavan', 'Rajpura', 'Bhiwadi', 'Bhusawal',
-  'Chittoor', 'Bidar', 'Bilaspur', 'Bettiah', 'Bhadravati', 'Bhadrak',
-  'Bharuch', 'Bhandara', 'Bharatpur'
+  'Kirari Suleman Nagar', 'Purnia', 'Satna', 'Mau', 'Sonipat', 
+  'Farrukhabad', 'Sagar', 'Rourkela', 'Durg', 'Imphal', 'Ratlam', 'Hapur', 
+  'Arrah', 'Karimnagar', 'Etawah', 'Bharatpur', 'Begusarai', 'New Delhi',
+  'Chhapra', 'Ramagundam', 'Pali', 'Vizianagaram', 'Katihar', 'Hardwar', 
+  'Nagercoil', 'Thanjavur', 'Murwara', 'Naihati', 'Sambhal', 'Nadiad', 
+  'Yamunanagar', 'English Bazar', 'Munger', 'Panchkula', 'Raayachuru', 
+  'Panvel', 'Deoghar', 'Ongole', 'Nandyal', 'Morena', 'Bhiwani', 
+  'Porbandar', 'Palakkad', 'Anand', 'Pundri', 'Baharampur', 'Barmer', 
+  'Morvi', 'Orai', 'Bahraich', 'Phagwara', 'Tinsukia', 'Guntakal', 
+  'Srikakulam', 'Balasore', 'Ambikapur', 'Rewa', 'Raichur', 'Vrindavan', 
+  'Rajpura', 'Bhiwadi', 'Bhusawal', 'Chittoor', 'Bidar', 'Bettiah', 
+  'Bhadravati', 'Bhadrak', 'Bharuch', 'Bhandara'
 ];
 
 const companies = [
@@ -310,13 +327,45 @@ async function seedCommonData() {
     const companyRepository = AppDataSource.getRepository(Company);
     const designationRepository = AppDataSource.getRepository(Designation);
 
-    // Seed Cities
+    // Seed Cities with priority
     console.log('🏙️  Seeding cities...');
-    const cityEntities = cities.map(cityName => 
-      cityRepository.create({ name: cityName, isActive: true })
-    );
+    const cityEntities = [];
+    
+    // Add top cities first
+    topCities.forEach(city => {
+      cityEntities.push(
+        cityRepository.create({ 
+          name: city.name, 
+          priority: city.priority,
+          isActive: true 
+        })
+      );
+    });
+    
+    // Add tier 2 cities
+    tier2Cities.forEach((cityName, index) => {
+      cityEntities.push(
+        cityRepository.create({ 
+          name: cityName, 
+          priority: 11 + index,
+          isActive: true 
+        })
+      );
+    });
+    
+    // Add other cities
+    otherCities.forEach((cityName, index) => {
+      cityEntities.push(
+        cityRepository.create({ 
+          name: cityName, 
+          priority: 31 + index,
+          isActive: true 
+        })
+      );
+    });
+    
     await cityRepository.save(cityEntities);
-    console.log(`✅ Seeded ${cityEntities.length} cities`);
+    console.log(`✅ Seeded ${cityEntities.length} cities (${topCities.length} top cities, ${tier2Cities.length} tier 2, ${otherCities.length} others)`);
 
     // Seed Companies
     console.log('🏢 Seeding companies...');

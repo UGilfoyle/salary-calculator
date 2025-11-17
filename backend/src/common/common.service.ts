@@ -19,7 +19,11 @@ export class CommonService {
   async getCities(): Promise<City[]> {
     return this.cityRepository.find({
       where: { isActive: true },
-      order: { name: 'ASC' },
+      order: { 
+        priority: 'ASC', // Top cities first (lower priority number = higher priority)
+        usageCount: 'DESC', // Then by usage count
+        name: 'ASC', // Finally alphabetically
+      },
     });
   }
 
