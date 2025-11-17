@@ -337,6 +337,12 @@ function App() {
               )}
 
               <div className="content-wrapper centered">
+                {loadingData ? (
+                  <div className="form-card" style={{ textAlign: 'center', padding: '3rem' }}>
+                    <div className="loader" style={{ margin: '0 auto 1rem' }}></div>
+                    <p>Loading cities, companies, and designations...</p>
+                  </div>
+                ) : (
                 <form onSubmit={handleSubmit} className="form-card">
                   <div className="form-section">
                     <label htmlFor="ctc">
@@ -480,10 +486,11 @@ function App() {
 
                   {error && <div className="error-message">{error}</div>}
 
-                  <button type="submit" className="submit-btn" disabled={loading}>
+                  <button type="submit" className="submit-btn" disabled={loading || loadingData}>
                     {loading ? 'Calculating...' : 'Calculate Salary'}
                   </button>
                 </form>
+                )}
               </div>
             </>
           ) : activeTab === 'ats' ? (
