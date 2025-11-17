@@ -52,6 +52,44 @@ export class AuthService {
     return user;
   }
 
+  async validateGoogleUser(profile: any) {
+    const { email, displayName, picture, googleId } = profile;
+    const username = email?.split('@')[0] || `google_${googleId}`;
+
+    // First, try to find by googleId (if we add this field) or by email
+    let user = await this.userRepository.findOne({
+      where: [{ email }, { githubId: googleId }], // Using githubId field temporarily, or we can add googleId
+    });
+
+    if (!user) {
+      // Check if this is the first user (make them admin)
+      const userCount = await this.userRepository.count();
+      const role = userCount === 0 ? UserRole.ADMIN : UserRole.USER;
+
+      user = this.userRepository.create({
+        email: email,
+        username: username,
+        displayName: displayName || username,
+        avatarUrl: picture || null,
+        role,
+        // Store googleId in githubId field for now (or add separate googleId field)
+        githubId: googleId,
+      });
+      await this.userRepository.save(user);
+    } else {
+      // Update user info
+      user.displayName = displayName || user.displayName;
+      user.avatarUrl = picture || user.avatarUrl;
+      user.email = email || user.email;
+      if (!user.githubId) {
+        user.githubId = googleId; // Store googleId if not already set
+      }
+      await this.userRepository.save(user);
+    }
+
+    return user;
+  }
+
   async login(user: User) {
     const payload = { sub: user.id, username: user.username, role: user.role };
     return {
