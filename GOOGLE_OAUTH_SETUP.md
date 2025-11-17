@@ -92,14 +92,14 @@
    - Click **"Add URI"** button
    - Add these URIs (one at a time):
      - For **local development**: `http://localhost:3000`
-     - For **production**: `https://salary-calculator-backend.onrender.com` (your Render backend URL)
+     - For **production**: `https://salary-calculator-7lhz.onrender.com` (your Render backend URL)
    - **Note**: These are the domains where your backend runs (NOT your frontend URL)
 
 8. **Authorized redirect URIs**:
    - Click **"Add URI"** button
    - Add these URIs (one at a time):
      - For **local development**: `http://localhost:3000/api/auth/google/callback`
-     - For **production**: `https://salary-calculator-backend.onrender.com/api/auth/google/callback`
+     - For **production**: `https://salary-calculator-7lhz.onrender.com/api/auth/google/callback`
    - **IMPORTANT**: The redirect URI must match EXACTLY, including the full path `/api/auth/google/callback`
 
 9. Click **"Create"** button
@@ -132,7 +132,7 @@ GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
    - Add these variables:
      - `GOOGLE_CLIENT_ID` = your-client-id
      - `GOOGLE_CLIENT_SECRET` = your-client-secret
-     - `GOOGLE_CALLBACK_URL` = https://salary-calculator-backend.onrender.com/api/auth/google/callback
+     - `GOOGLE_CALLBACK_URL` = https://salary-calculator-7lhz.onrender.com/api/auth/google/callback
 
 2. **Frontend (Vercel)**:
    - No additional environment variables needed for Google OAuth
@@ -144,7 +144,7 @@ Once you deploy your backend:
 1. Go back to Google Cloud Console > Credentials
 2. Edit your OAuth 2.0 Client ID
 3. Add your production redirect URI (if not already added):
-   - `https://salary-calculator-backend.onrender.com/api/auth/google/callback`
+   - `https://salary-calculator-7lhz.onrender.com/api/auth/google/callback`
 4. Save the changes
 
 ### Important Notes:
