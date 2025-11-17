@@ -12,7 +12,7 @@ export default function AtsChecker() {
                     <p>Get your resume analyzed for ATS compatibility</p>
                 </div>
             </div>
-            
+
             <div className="coming-soon-container">
                 <Construction size={64} className="coming-soon-icon" />
                 <h3>Coming Soon!</h3>
