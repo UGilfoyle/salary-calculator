@@ -48,8 +48,127 @@ const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: strin
   }
 };
 
+// OCR support for scanned PDFs (optional, will fallback gracefully if not available)
+let tesseractWorker: any = null;
+let ocrAvailable = false;
+let ocrLoadError: Error | null = null;
+
+const loadOCR = async (): Promise<boolean> => {
+  if (ocrAvailable) return true;
+  if (ocrLoadError) return false;
+
+  try {
+    // Try to load tesseract.js for OCR
+    const Tesseract = require('tesseract.js');
+    if (Tesseract && Tesseract.createWorker) {
+      console.log('Initializing Tesseract OCR worker...');
+      tesseractWorker = await Tesseract.createWorker('eng');
+      ocrAvailable = true;
+      console.log('OCR (Tesseract.js) loaded successfully');
+      return true;
+    }
+    throw new Error('Tesseract.createWorker not available');
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.warn('OCR not available (tesseract.js not installed or failed to load):', errorMsg);
+    ocrLoadError = error instanceof Error ? error : new Error(errorMsg);
+    return false;
+  }
+};
+
+// Function to extract text from PDF using OCR (for scanned PDFs)
+const extractTextFromPdfWithOCR = async (buffer: Buffer): Promise<string> => {
+  const ocrReady = await loadOCR();
+  if (!ocrReady || !tesseractWorker) {
+    throw new BadRequestException(
+      'OCR is not available. Please install tesseract.js or use a PDF with selectable text.'
+    );
+  }
+
+  try {
+    // Use pdfjs-dist to render PDF pages to images, then OCR them
+    // pdfjs-dist is already installed in the project
+    let pdfjs: any = null;
+    try {
+      pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+    } catch (e) {
+      // Fallback: try direct require
+      pdfjs = require('pdfjs-dist');
+    }
+
+    if (!pdfjs) {
+      throw new Error('pdfjs-dist not available');
+    }
+
+    console.log('Attempting OCR on PDF...');
+    
+    // Load PDF document
+    const loadingTask = pdfjs.getDocument({ data: buffer });
+    const pdfDocument = await loadingTask.promise;
+    const numPages = pdfDocument.numPages;
+    
+    console.log(`PDF has ${numPages} page(s), processing with OCR...`);
+    
+    let allText = '';
+    
+    // Process each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDocument.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR quality
+      
+      // Create a canvas to render the page
+      const { createCanvas } = require('canvas');
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const context = canvas.getContext('2d');
+      
+      // Render PDF page to canvas
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+      }).promise;
+      
+      // Convert canvas to image buffer
+      const imageBuffer = canvas.toBuffer('image/png');
+      
+      // OCR the image
+      console.log(`OCR processing page ${pageNum}/${numPages}...`);
+      const result = await tesseractWorker.recognize(imageBuffer);
+      const pageText = result.data.text || '';
+      
+      if (pageText.trim().length > 0) {
+        allText += pageText + '\n\n';
+        console.log(`Extracted ${pageText.length} characters from page ${pageNum}`);
+      }
+    }
+    
+    if (!allText || allText.trim().length < 10) {
+      throw new BadRequestException(
+        'OCR could not extract meaningful text from the PDF. The image quality may be too low or the PDF may be corrupted.'
+      );
+    }
+    
+    console.log(`Successfully extracted ${allText.length} characters using OCR from ${numPages} page(s)`);
+    return allText.trim();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('OCR error:', errorMessage);
+    
+    // Check if it's a missing dependency error
+    if (errorMessage.includes('canvas') || errorMessage.includes('Cannot find module')) {
+      throw new BadRequestException(
+        'OCR requires additional dependencies (canvas package). ' +
+        'For now, please use a PDF with selectable text, or contact support for OCR setup.'
+      );
+    }
+    
+    throw new BadRequestException(
+      `OCR failed: ${errorMessage}. Please try with a higher quality scanned PDF or use a text-based PDF.`
+    );
+  }
+};
+
 // Function to extract text from PDF using pdf-parse
-const extractTextFromPdf = async (buffer: Buffer): Promise<string> => {
+const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promise<string> => {
   const pdfParser = await loadPdfParse();
   
   try {
@@ -97,6 +216,24 @@ const extractTextFromPdf = async (buffer: Buffer): Promise<string> => {
     if (!text || text.length < 10) {
       // Check if PDF has pages
       const numPages = (data && typeof data === 'object' && 'numpages' in data) ? data.numpages : 0;
+      
+      // If no text found and OCR is enabled, try OCR as fallback
+      if (numPages > 0 && tryOCR) {
+        console.log('No text found in PDF, attempting OCR...');
+        try {
+          return await extractTextFromPdfWithOCR(buffer);
+        } catch (ocrError) {
+          // If OCR fails, throw the original error
+          console.warn('OCR fallback failed:', ocrError instanceof Error ? ocrError.message : String(ocrError));
+          throw new BadRequestException(
+            `Could not extract text from PDF. The PDF appears to be image-based (scanned) or contains only images. ` +
+            `OCR attempt failed: ${ocrError instanceof Error ? ocrError.message : 'Unknown error'}. ` +
+            `Please use a PDF with selectable text, or ensure your scanned PDF has good image quality. ` +
+            `PDF has ${numPages} page(s) but no extractable text was found.`
+          );
+        }
+      }
+      
       if (numPages > 0) {
         throw new BadRequestException(
           `Could not extract text from PDF. The PDF appears to be image-based (scanned) or contains only images. ` +
