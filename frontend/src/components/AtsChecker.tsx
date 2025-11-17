@@ -556,7 +556,7 @@ export default function AtsChecker() {
                             <h3>How to Fix: {selectedFix}</h3>
                         </div>
                         <div className="fix-details-content">
-                            {result.premiumFeatures && (
+                            {result && result.premiumFeatures && (
                                 <>
                                     {result.premiumFeatures.resumeOptimizationTips
                                         .filter(tip => tip.toLowerCase().includes(selectedFix.toLowerCase().split(' ')[0]))
@@ -586,7 +586,7 @@ export default function AtsChecker() {
                                         ))}
                                 </>
                             )}
-                            {(!result.premiumFeatures || 
+                            {(!result || !result.premiumFeatures || 
                               (result.premiumFeatures.resumeOptimizationTips.length === 0 && 
                                result.premiumFeatures.keywordReplacements.length === 0)) && (
                                 <div className="fix-tip-card">
