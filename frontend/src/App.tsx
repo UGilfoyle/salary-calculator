@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Calculator, MapPin, DollarSign, TrendingUp, Shield, LogOut, History, Building2, Plane, BarChart3, X } from 'lucide-react'
+import { Calculator, MapPin, DollarSign, TrendingUp, Shield, LogOut, History, Building2, Plane, BarChart3, X, FileText } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
 import AdminDashboard from './components/AdminDashboard'
+import AtsChecker from './components/AtsChecker'
 import './App.css'
 
 const getApiBaseUrl = () => {
@@ -65,7 +66,7 @@ function App() {
   const [error, setError] = useState('')
   const [history, setHistory] = useState<any[]>([])
   const [showHistory, setShowHistory] = useState(false)
-  const [activeTab, setActiveTab] = useState<'salary' | 'admin'>('salary')
+  const [activeTab, setActiveTab] = useState<'salary' | 'ats' | 'admin'>('salary')
   const [showResultModal, setShowResultModal] = useState(false)
 
   // Handle auth callback
@@ -229,6 +230,13 @@ function App() {
           >
             <Calculator size={20} />
             Salary Calculator
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'ats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ats')}
+          >
+            <FileText size={20} />
+            Resume ATS Checker
           </button>
           {(user.role === 'admin' || user.isAdmin === true) && (
             <button
@@ -415,6 +423,10 @@ function App() {
                 </form>
               </div>
             </>
+          ) : activeTab === 'ats' ? (
+            <div className="content-wrapper">
+              <AtsChecker />
+            </div>
           ) : activeTab === 'admin' ? (
             <div className="content-wrapper">
               <AdminDashboard />
