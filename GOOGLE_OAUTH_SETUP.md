@@ -11,14 +11,23 @@
 5. Click **"Create"**
 6. Wait for the project to be created and select it
 
-### Step 2: Enable Google+ API
+### Step 2: Enable Required APIs (Optional but Recommended)
+
+**Important Note**: For OAuth 2.0 login, you technically don't need to enable any specific API. However, enabling the **People API** is recommended to ensure you can access user profile information reliably.
 
 1. In the Google Cloud Console, go to **"APIs & Services"** > **"Library"**
-2. Search for **"Google+ API"** (or "Google Identity Services")
+2. Search for **"People API"** (this is the modern replacement for Google+ API)
 3. Click on it and click **"Enable"**
-4. Also search for **"People API"** and enable it (for getting user profile info)
+4. **Note**: Google+ API is deprecated, so use People API instead
+
+**Why People API?**
+- It's the modern way to access Google user profile information
+- Our Passport.js strategy will use it to get user email, name, and profile picture
+- It's free and doesn't require any special permissions
 
 ### Step 3: Configure OAuth Consent Screen
+
+**What is this?** This is where you tell Google what your app is and what permissions it needs. This is required before you can create OAuth credentials.
 
 1. Go to **"APIs & Services"** > **"OAuth consent screen"**
 2. Select **"External"** (unless you have a Google Workspace account)
@@ -42,11 +51,14 @@
 
 ### Step 4: Create OAuth 2.0 Credentials
 
+**This is the main step!** You're creating the Client ID and Client Secret that your backend will use.
+
 1. Go to **"APIs & Services"** > **"Credentials"**
 2. Click **"+ CREATE CREDENTIALS"** at the top
 3. Select **"OAuth client ID"**
-4. If prompted, select **"Web application"** as the application type
-5. Fill in the details:
+4. If this is your first time, you might see a warning about configuring the consent screen. If so, go back to Step 3 first.
+5. Select **"Web application"** as the application type
+6. Fill in the details:
    - **Name**: `Salary Calculator Web Client` (or any name)
    - **Authorized JavaScript origins**:
      - For local development: `http://localhost:3000`
@@ -96,10 +108,26 @@ Once you deploy your backend:
 
 ### Important Notes:
 
+- **No API Required**: You don't actually need to enable Google+ API or People API for basic OAuth login to work. The OAuth 2.0 credentials are enough. However, enabling People API ensures better access to user profile data.
+
+- **What We're Using**: 
+  - **OAuth 2.0** (not an API, but a protocol/standard)
+  - **People API** (optional, but recommended for profile data)
+  - **NOT Google+ API** (deprecated, don't use this)
+
 - **Testing Mode**: Your app will be in testing mode initially. Only test users can sign in.
+
 - **Publishing**: To allow all users, you need to submit your app for verification (if using sensitive scopes)
+
 - **Local Development**: Make sure your redirect URI matches exactly (including http vs https, port numbers, etc.)
+
 - **Security**: Never commit your Client Secret to version control. Always use environment variables.
+
+### Quick Answer: Which API?
+
+**Answer**: You don't need a specific API! Just create **OAuth 2.0 Credentials** (Step 4). 
+
+However, if you want to be safe and ensure profile data access works well, enable **People API** (Step 2). That's it!
 
 ### Troubleshooting:
 
