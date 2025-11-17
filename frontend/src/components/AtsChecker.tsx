@@ -437,7 +437,7 @@ export default function AtsChecker() {
                             <Star size={32} />
                             <h4>Unlock Premium Features</h4>
                             <p className="premium-description">Get detailed keyword analysis, advanced optimization tips, and personalized resume enhancement recommendations</p>
-                            
+
                             {/* Show Resume Issues */}
                             {result.weaknesses.length > 0 && (
                                 <div className="resume-issues-preview">
