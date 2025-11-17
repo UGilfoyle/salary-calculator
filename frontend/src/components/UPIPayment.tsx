@@ -206,6 +206,35 @@ export default function UPIPayment({
                                 <ExternalLink size={20} />
                                 Open UPI App
                             </button>
+                        </div>
+
+                        <div className="payment-instructions">
+                            <h4>How to Pay:</h4>
+                            <ol>
+                                <li>Click "Open UPI App" or copy the UPI ID</li>
+                                <li>Open your UPI app (GPay, PhonePe, Paytm, etc.)</li>
+                                <li>Enter the UPI ID and amount (₹{amount})</li>
+                                <li>Complete the payment in your UPI app</li>
+                                <li>Return here and click "I've Paid" to verify</li>
+                            </ol>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'processing' && (
+                    <div className="payment-content processing">
+                        <div className="processing-animation">
+                            <div className="spinner"></div>
+                        </div>
+                        <h2>Complete Payment</h2>
+                        <p>Please complete the payment in your UPI app</p>
+                        {error && (
+                            <div className="payment-error">
+                                <AlertCircle size={18} />
+                                {error}
+                            </div>
+                        )}
+                        <div className="payment-actions">
                             <button
                                 onClick={handleVerifyPayment}
                                 className="pay-btn secondary"
@@ -224,50 +253,6 @@ export default function UPIPayment({
                                 )}
                             </button>
                         </div>
-
-                        <div className="payment-instructions">
-                            <h4>How to Pay:</h4>
-                            <ol>
-                                <li>Click "Open UPI App" or copy the UPI ID</li>
-                                <li>Open your UPI app (GPay, PhonePe, Paytm, etc.)</li>
-                                <li>Enter the UPI ID and amount (₹{amount})</li>
-                                <li>Complete the payment</li>
-                                <li>Click "I've Paid" to verify</li>
-                            </ol>
-                        </div>
-                    </div>
-                )}
-
-                {step === 'processing' && (
-                    <div className="payment-content processing">
-                        <div className="processing-animation">
-                            <div className="spinner"></div>
-                        </div>
-                        <h2>Processing Payment</h2>
-                        <p>Please complete the payment in your UPI app</p>
-                        {error && (
-                            <div className="payment-error">
-                                <AlertCircle size={18} />
-                                {error}
-                            </div>
-                        )}
-                        <button
-                            onClick={handleVerifyPayment}
-                            className="pay-btn secondary"
-                            disabled={verifying}
-                        >
-                            {verifying ? (
-                                <>
-                                    <div className="mini-spinner"></div>
-                                    Verifying...
-                                </>
-                            ) : (
-                                <>
-                                    <CheckCircle size={20} />
-                                    I've Completed Payment
-                                </>
-                            )}
-                        </button>
                     </div>
                 )}
 
