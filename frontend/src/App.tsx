@@ -424,7 +424,7 @@ function App() {
               </div>
             </>
           ) : activeTab === 'ats' ? (
-            <div className="content-wrapper">
+            <div className="content-wrapper centered">
               <AtsChecker />
             </div>
           ) : activeTab === 'admin' ? (

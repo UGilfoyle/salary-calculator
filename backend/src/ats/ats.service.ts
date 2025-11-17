@@ -5,72 +5,76 @@ import * as mammoth from 'mammoth';
 import { AtsUsage } from './entities/ats-usage.entity';
 import { AtsCheck } from './entities/ats-check.entity';
 
-// PDF parsing using pdfjs-dist with dynamic import for ESM compatibility
-let pdfjsLib: any = null;
-let pdfjsLoadError: Error | null = null;
+// PDF parsing using pdf-parse (CommonJS compatible, works in Node.js)
+let pdfParse: ((buffer: Buffer) => Promise<{ text: string }>) | null = null;
+let pdfParseLoadError: Error | null = null;
 
-// Lazy load pdfjs-dist using dynamic import
-const loadPdfJs = async (): Promise<any> => {
-  if (pdfjsLib) {
-    return pdfjsLib;
+// Lazy load pdf-parse
+const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: string }>> => {
+  if (pdfParse) {
+    return pdfParse;
   }
 
-  if (pdfjsLoadError) {
-    throw pdfjsLoadError;
+  if (pdfParseLoadError) {
+    throw pdfParseLoadError;
   }
 
   try {
-    // Use dynamic import for ESM compatibility
-    const pdfjsModule = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    pdfjsLib = pdfjsModule;
+    // pdf-parse is a CommonJS module, use require()
+    const pdfParseModule = require('pdf-parse');
     
-    // Set worker source (required for pdfjs-dist)
-    if (typeof window === 'undefined') {
-      // Node.js environment - use node worker
-      const pdfjsWorker = await import('pdfjs-dist/legacy/build/pdf.worker.mjs');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default || pdfjsWorker;
+    // pdf-parse exports the function directly
+    if (typeof pdfParseModule === 'function') {
+      pdfParse = pdfParseModule;
+    } else if (pdfParseModule && typeof pdfParseModule.default === 'function') {
+      pdfParse = pdfParseModule.default;
+    } else if (pdfParseModule && typeof pdfParseModule.pdfParse === 'function') {
+      pdfParse = pdfParseModule.pdfParse;
+    } else {
+      throw new Error('pdf-parse module format is unexpected. Got type: ' + typeof pdfParseModule);
     }
     
-    console.log('pdfjs-dist loaded successfully');
-    return pdfjsLib;
+    console.log('pdf-parse loaded successfully');
+    return pdfParse;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Failed to load pdfjs-dist:', errorMessage);
+    console.error('Failed to load pdf-parse:', errorMessage);
     
     const finalError = new BadRequestException(
-      `PDF parsing is not available. Please ensure pdfjs-dist is installed. Error: ${errorMessage}`
+      `PDF parsing is not available. Please ensure pdf-parse is installed. Error: ${errorMessage}`
     );
-    pdfjsLoadError = finalError;
+    pdfParseLoadError = finalError;
     throw finalError;
   }
 };
 
-// Function to extract text from PDF using pdfjs-dist
+// Function to extract text from PDF using pdf-parse
 const extractTextFromPdf = async (buffer: Buffer): Promise<string> => {
-  const pdfjs = await loadPdfJs();
+  const pdfParser = await loadPdfParse();
   
   try {
-    // Load the PDF document
-    const loadingTask = pdfjs.getDocument({ data: buffer });
-    const pdfDocument = await loadingTask.promise;
+    // Parse PDF and extract text
+    const data = await pdfParser(buffer);
     
-    let fullText = '';
-    
-    // Extract text from each page
-    for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      
-      // Combine text items from the page
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
-      
-      fullText += pageText + '\n';
+    // pdf-parse returns an object with a 'text' property
+    let text = '';
+    if (typeof data === 'string') {
+      text = data;
+    } else if (data && typeof data === 'object' && 'text' in data) {
+      text = data.text || '';
+    } else {
+      text = String(data || '');
     }
     
-    return fullText.trim();
+    if (!text || text.trim().length === 0) {
+      throw new BadRequestException('Could not extract text from PDF. The file may be empty, corrupted, or contain only images.');
+    }
+    
+    return text.trim();
   } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     throw new BadRequestException(
       `Failed to parse PDF: ${errorMessage}. Please ensure the file is not password-protected or corrupted.`
