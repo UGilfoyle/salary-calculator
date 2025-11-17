@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Calculator, MapPin, DollarSign, TrendingUp, Shield, LogOut, History, Building2, Plane, BarChart3, X, FileText, FileCheck, User } from 'lucide-react'
+import { Calculator, MapPin, DollarSign, TrendingUp, LogOut, History, Building2, Plane, X, FileText, FileCheck, User } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
-import AdminDashboard from './components/AdminDashboard'
 import AtsChecker from './components/AtsChecker'
 import DocumentConverter from './components/DocumentConverter'
 import './App.css'
@@ -70,7 +69,7 @@ function App() {
   const [error, setError] = useState('')
   const [history, setHistory] = useState<any[]>([])
   const [showHistory, setShowHistory] = useState(false)
-  const [activeTab, setActiveTab] = useState<'salary' | 'ats' | 'converter' | 'admin'>('salary')
+  const [activeTab, setActiveTab] = useState<'salary' | 'ats' | 'converter'>('salary')
   const [showResultModal, setShowResultModal] = useState(false)
   const [indianCities, setIndianCities] = useState<string[]>([])
   const [topCities, setTopCities] = useState<string[]>([])
@@ -557,10 +556,6 @@ function App() {
           ) : activeTab === 'converter' ? (
             <div className="content-wrapper centered">
               <DocumentConverter />
-            </div>
-          ) : activeTab === 'admin' ? (
-            <div className="content-wrapper">
-              <AdminDashboard />
             </div>
           ) : null}
         </div>
