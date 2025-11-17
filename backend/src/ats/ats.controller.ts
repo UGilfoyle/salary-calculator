@@ -141,17 +141,14 @@ export class AtsController {
             totalKeywords: check.totalKeywords,
             fileSize: check.fileSize,
             wordCount: check.wordCount,
-            companyComparisons: {
-                goldmanSachs: { score: 0, match: '' },
-                google: { score: 0, match: '' },
-                allCompanies: check.companyComparisons || {},
-            },
             detailedAnalysis: check.detailedAnalysis || {
                 keywordDensity: 0,
                 sectionCompleteness: 0,
                 actionVerbUsage: 0,
                 quantifiableResults: 0,
                 technicalSkills: 0,
+                formattingScore: 0,
+                atsCompatibility: 0,
             },
         };
 

@@ -741,14 +741,109 @@
   color: #6b7280;
 }
 
-/* Company Comparisons */
-.company-comparisons {
+/* ATS Compatibility Section */
+.ats-compatibility-section {
   margin-bottom: 2rem;
   padding: 2rem;
   background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
   border-radius: 20px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.ats-compatibility-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.compatibility-card {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-radius: 16px;
+  border: 2px solid;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.compatibility-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.compatibility-score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.compatibility-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #111827 0%, #374151 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.compatibility-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.compatibility-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.compatibility-details p {
+  font-size: 0.95rem;
+  color: #374151;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.compatibility-details strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.compatibility-note {
+  font-size: 0.875rem !important;
+  color: #6b7280 !important;
+  font-style: italic;
+}
+
+.analysis-item.highlight-item {
+  background: linear-gradient(135deg, #eef2ff 0%, #ffffff 100%);
+  border: 2px solid #6366f1;
+}
+
+.analysis-item.highlight-item .analysis-label {
+  font-weight: 600;
+  color: #4f46e5;
 }
 
 .company-comparisons h4 {

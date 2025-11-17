@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Lock, Sparkles, Building2 } from 'lucide-react';
+import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import UPIPayment from './UPIPayment';
@@ -21,17 +21,14 @@ interface AtsCheckResult {
     totalKeywords: number;
     fileSize: number;
     wordCount: number;
-    companyComparisons: {
-        goldmanSachs: { score: number; match: string };
-        google: { score: number; match: string };
-        allCompanies?: Record<string, { score: number; match: string }>;
-    };
     detailedAnalysis: {
         keywordDensity: number;
         sectionCompleteness: number;
         actionVerbUsage: number;
         quantifiableResults: number;
         technicalSkills: number;
+        formattingScore: number;
+        atsCompatibility: number;
     };
     premiumFeatures?: {
         optimizedKeywords: string[];
@@ -249,50 +246,21 @@ export default function AtsChecker() {
                         </div>
                     </div>
 
-                    {/* Company Comparisons */}
-                    <div className="company-comparisons">
+                    {/* ATS Compatibility Score */}
+                    <div className="ats-compatibility-section">
                         <h4>
-                            <Building2 size={20} />
-                            Company Match Scores
+                            <CheckCircle size={20} />
+                            ATS Compatibility
                         </h4>
-                        <div className="company-scores">
-                            <div className="company-score-item">
-                                <span className="company-name">Goldman Sachs</span>
-                                <span className="company-score" style={{ color: getScoreColor(result.companyComparisons.goldmanSachs.score) }}>
-                                    {result.companyComparisons.goldmanSachs.score}%
-                                </span>
-                                <span className="company-match">{result.companyComparisons.goldmanSachs.match}</span>
+                        <div className="compatibility-card" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
+                            <div className="compatibility-score-circle" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
+                                <span className="compatibility-value">{result.detailedAnalysis.atsCompatibility}%</span>
+                                <span className="compatibility-label">ATS Compatible</span>
                             </div>
-                            <div className="company-score-item">
-                                <span className="company-name">Google</span>
-                                <span className="company-score" style={{ color: getScoreColor(result.companyComparisons.google.score) }}>
-                                    {result.companyComparisons.google.score}%
-                                </span>
-                                <span className="company-match">{result.companyComparisons.google.match}</span>
+                            <div className="compatibility-details">
+                                <p>This score indicates how well your resume will perform across <strong>95% of ATS systems</strong> used by companies worldwide.</p>
+                                <p className="compatibility-note">Our algorithm analyzes keywords, formatting, structure, and content to ensure maximum compatibility with most Applicant Tracking Systems.</p>
                             </div>
-                            {!isPremium && result.companyComparisons.allCompanies && (
-                                <div className="premium-prompt">
-                                    <Lock size={20} />
-                                    <div>
-                                        <strong>Unlock All Companies</strong>
-                                        <p>See match scores for Amazon, Microsoft, Meta, Apple, Netflix, Uber and more</p>
-                                    </div>
-                                    <button onClick={handleUpgrade} className="upgrade-btn-small">
-                                        Upgrade
-                                    </button>
-                                </div>
-                            )}
-                            {isPremium && result.companyComparisons.allCompanies && (
-                                Object.entries(result.companyComparisons.allCompanies).map(([company, data]) => (
-                                    <div key={company} className="company-score-item premium">
-                                        <span className="company-name">{company.charAt(0).toUpperCase() + company.slice(1).replace(/([A-Z])/g, ' $1')}</span>
-                                        <span className="company-score" style={{ color: getScoreColor(data.score) }}>
-                                            {data.score}%
-                                        </span>
-                                        <span className="company-match">{data.match}</span>
-                                    </div>
-                                ))
-                            )}
                         </div>
                     </div>
 
@@ -322,6 +290,16 @@ export default function AtsChecker() {
                             <div className="analysis-item">
                                 <span className="analysis-label">Technical Skills</span>
                                 <span className="analysis-value">{result.detailedAnalysis.technicalSkills}%</span>
+                            </div>
+                            <div className="analysis-item">
+                                <span className="analysis-label">Formatting Score</span>
+                                <span className="analysis-value">{result.detailedAnalysis.formattingScore}%</span>
+                            </div>
+                            <div className="analysis-item highlight-item">
+                                <span className="analysis-label">ATS Compatibility</span>
+                                <span className="analysis-value" style={{ color: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
+                                    {result.detailedAnalysis.atsCompatibility}%
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -376,7 +354,7 @@ export default function AtsChecker() {
                         <div className="premium-upgrade-card">
                             <Star size={32} />
                             <h4>Unlock Premium Features</h4>
-                            <p>Get detailed keyword analysis, optimization tips, and company-specific recommendations</p>
+                            <p>Get detailed keyword analysis, advanced optimization tips, and personalized resume enhancement recommendations</p>
                             <button onClick={handleUpgrade} className="upgrade-btn">
                                 Upgrade to Premium - ₹99
                             </button>

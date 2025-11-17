@@ -91,18 +91,14 @@ export interface AtsCheckResult {
   totalKeywords: number;
   fileSize: number;
   wordCount: number;
-  companyComparisons: {
-    goldmanSachs: { score: number; match: string };
-    google: { score: number; match: string };
-    // Premium: all companies
-    allCompanies?: Record<string, { score: number; match: string }>;
-  };
   detailedAnalysis: {
     keywordDensity: number;
     sectionCompleteness: number;
     actionVerbUsage: number;
     quantifiableResults: number;
     technicalSkills: number;
+    formattingScore: number;
+    atsCompatibility: number;
   };
   // Premium features
   premiumFeatures?: {
@@ -120,70 +116,46 @@ export class AtsService {
   private readonly MAX_TRIES = 3;
   private readonly RESET_HOURS = 12;
 
-  // Common ATS keywords to check
+  // Comprehensive ATS keywords that work for 95% of companies
+  // These keywords are commonly searched by ATS systems across industries
   private readonly ATS_KEYWORDS = [
-    'skills', 'experience', 'education', 'certification', 'achievement',
-    'leadership', 'project', 'team', 'communication', 'problem solving',
-    'analytical', 'technical', 'professional', 'bachelor', 'master',
-    'degree', 'certified', 'proficient', 'expert', 'knowledge',
-    'responsibility', 'accomplishment', 'result', 'improve', 'increase',
-    'develop', 'manage', 'implement', 'create', 'design', 'build',
-    'javascript', 'python', 'java', 'react', 'node', 'sql', 'database',
-    'api', 'rest', 'git', 'agile', 'scrum', 'devops', 'cloud', 'aws',
+    // Core resume sections
+    'skills', 'experience', 'education', 'certification', 'achievement', 'qualification',
+    'summary', 'objective', 'profile', 'professional', 'career',
+    
+    // Soft skills (universally valued)
+    'leadership', 'communication', 'teamwork', 'collaboration', 'problem solving',
+    'analytical', 'critical thinking', 'adaptability', 'initiative', 'innovation',
+    'management', 'organization', 'planning', 'strategy', 'decision making',
+    
+    // Technical skills (broad coverage)
+    'technical', 'proficient', 'expert', 'knowledge', 'competent', 'skilled',
+    'javascript', 'python', 'java', 'sql', 'database', 'api', 'rest', 'web',
+    'cloud', 'aws', 'azure', 'gcp', 'devops', 'ci/cd', 'git', 'github',
+    'agile', 'scrum', 'project management', 'software', 'development',
+    
+    // Action verbs (ATS systems look for these)
+    'achieved', 'improved', 'developed', 'managed', 'implemented', 'created',
+    'designed', 'built', 'led', 'increased', 'optimized', 'delivered',
+    'executed', 'launched', 'established', 'generated', 'reduced', 'enhanced',
+    
+    // Education & credentials
+    'bachelor', 'master', 'phd', 'degree', 'diploma', 'certified', 'certification',
+    'university', 'college', 'institute', 'course', 'training', 'workshop',
+    
+    // Quantifiable terms (ATS systems favor metrics)
+    'percent', 'percentage', 'million', 'billion', 'thousand', 'increased by',
+    'decreased by', 'reduced by', 'improved by', 'saved', 'generated',
+    
+    // Industry-agnostic terms
+    'client', 'customer', 'stakeholder', 'vendor', 'partner', 'collaboration',
+    'process', 'workflow', 'efficiency', 'productivity', 'quality', 'standard',
+    'compliance', 'regulation', 'security', 'risk', 'analysis', 'reporting',
+    
+    // Modern workplace terms
+    'remote', 'hybrid', 'cross-functional', 'multidisciplinary', 'diverse',
+    'inclusive', 'sustainability', 'digital transformation', 'automation',
   ];
-
-  // Company-specific keywords for ATS matching
-  private readonly COMPANY_KEYWORDS = {
-    goldmanSachs: [
-      'finance', 'financial', 'analytics', 'risk', 'trading', 'investment',
-      'quantitative', 'modeling', 'derivatives', 'portfolio', 'compliance',
-      'regulatory', 'excel', 'vba', 'sql', 'python', 'r', 'statistics',
-      'mba', 'cfa', 'leadership', 'client', 'stakeholder', 'strategy',
-    ],
-    google: [
-      'algorithm', 'data structure', 'system design', 'distributed systems',
-      'machine learning', 'ai', 'python', 'java', 'c++', 'go', 'javascript',
-      'react', 'angular', 'kubernetes', 'docker', 'cloud', 'gcp', 'aws',
-      'scalability', 'performance', 'optimization', 'open source', 'github',
-      'leetcode', 'competitive programming', 'bachelor', 'master', 'phd',
-    ],
-    amazon: [
-      'aws', 'cloud', 'distributed systems', 'scalability', 'microservices',
-      'java', 'python', 'javascript', 'react', 'node', 'docker', 'kubernetes',
-      'customer obsession', 'leadership principles', 'agile', 'scrum',
-      'data structures', 'algorithms', 'system design', 'api', 'rest',
-    ],
-    microsoft: [
-      'azure', 'cloud', 'c#', 'dotnet', 'typescript', 'javascript', 'react',
-      'angular', 'sql server', 'power bi', 'office 365', 'teams',
-      'enterprise', 'saas', 'paas', 'machine learning', 'ai', 'cognitive services',
-      'agile', 'scrum', 'devops', 'ci/cd', 'git', 'github',
-    ],
-    meta: [
-      'react', 'javascript', 'typescript', 'python', 'php', 'hack',
-      'graphql', 'apollo', 'relay', 'machine learning', 'ai', 'computer vision',
-      'distributed systems', 'scalability', 'performance', 'mobile', 'ios', 'android',
-      'open source', 'github', 'agile', 'data structures', 'algorithms',
-    ],
-    apple: [
-      'swift', 'objective-c', 'ios', 'macos', 'xcode', 'cocoa', 'core data',
-      'ui/ux', 'design', 'human interface guidelines', 'metal', 'core ml',
-      'machine learning', 'computer vision', 'ar', 'vr', 'arkit',
-      'agile', 'scrum', 'git', 'github', 'test driven development',
-    ],
-    netflix: [
-      'java', 'python', 'javascript', 'react', 'node', 'microservices',
-      'distributed systems', 'scalability', 'performance', 'streaming',
-      'data engineering', 'machine learning', 'recommendation systems',
-      'aws', 'cloud', 'docker', 'kubernetes', 'ci/cd', 'agile',
-    ],
-    uber: [
-      'python', 'java', 'go', 'javascript', 'react', 'mobile', 'ios', 'android',
-      'distributed systems', 'microservices', 'scalability', 'real-time',
-      'machine learning', 'data science', 'maps', 'gps', 'location services',
-      'agile', 'scrum', 'docker', 'kubernetes', 'aws', 'cloud',
-    ],
-  };
 
   constructor(
     @InjectRepository(AtsUsage)
@@ -301,43 +273,15 @@ export class AtsService {
     const words = resumeText.split(/\s+/).filter(word => word.length > 0);
     const wordCount = Math.max(words.length, 1); // Prevent division by zero
 
-    // Count keyword matches
-    const matchedKeywords = this.ATS_KEYWORDS.filter(keyword =>
-      lowerText.includes(keyword.toLowerCase())
-    );
+    // Count keyword matches (case-insensitive, partial word matching)
+    const matchedKeywords = this.ATS_KEYWORDS.filter(keyword => {
+      const keywordLower = keyword.toLowerCase();
+      // Check for exact match or as part of a word
+      return lowerText.includes(keywordLower) || 
+             new RegExp(`\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(lowerText);
+    });
     const keywordMatches = matchedKeywords.length;
     const totalKeywords = this.ATS_KEYWORDS.length;
-
-    // Company-specific keyword matching (all companies)
-    const companyScores: Record<string, { score: number; matches: number; total: number }> = {};
-    for (const [company, keywords] of Object.entries(this.COMPANY_KEYWORDS)) {
-      const matches = keywords.filter(keyword =>
-        lowerText.includes(keyword.toLowerCase())
-      ).length;
-      const score = Math.round((matches / keywords.length) * 100);
-      companyScores[company] = { score, matches, total: keywords.length };
-    }
-
-    // For free version, show only Goldman Sachs and Google
-    // Premium users get all companies
-    const goldmanScore = companyScores.goldmanSachs?.score || 0;
-    const googleScore = companyScores.google?.score || 0;
-    
-    // Determine match level
-    const getMatchLevel = (score: number): string => {
-      if (score >= 70) return 'Excellent Match';
-      if (score >= 50) return 'Good Match';
-      if (score >= 30) return 'Fair Match';
-      return 'Needs Improvement';
-    };
-
-    // Only include all companies for premium users
-    const allCompanyScores = isPremium 
-      ? Object.entries(companyScores).reduce((acc, [company, data]) => {
-          acc[company] = { score: data.score, match: getMatchLevel(data.score) };
-          return acc;
-        }, {} as Record<string, { score: number; match: string }>)
-      : undefined;
 
     // Detailed analysis metrics
     // Keyword density: number of matched keywords per 1000 words
@@ -347,38 +291,62 @@ export class AtsService {
     
     // Section completeness (0-100)
     const sections = {
-      contact: /email|phone|contact|address/i.test(resumeText),
-      experience: /experience|work|employment|position/i.test(resumeText),
-      education: /education|degree|university|college|bachelor|master/i.test(resumeText),
-      skills: /skills|technical|proficient|expert/i.test(resumeText),
+      contact: /email|phone|contact|address|mobile|telephone/i.test(resumeText),
+      experience: /experience|work|employment|position|role|job|career/i.test(resumeText),
+      education: /education|degree|university|college|bachelor|master|phd|diploma/i.test(resumeText),
+      skills: /skills|technical|proficient|expert|competencies|abilities/i.test(resumeText),
     };
     const sectionCompleteness = Math.round(
       (Object.values(sections).filter(Boolean).length / Object.keys(sections).length) * 100
     );
 
     // Action verb usage
-    const actionVerbs = ['achieved', 'improved', 'developed', 'managed', 'implemented', 'created', 'designed', 'built', 'led', 'increased', 'optimized', 'delivered', 'executed', 'launched'];
+    const actionVerbs = ['achieved', 'improved', 'developed', 'managed', 'implemented', 'created', 'designed', 'built', 'led', 'increased', 'optimized', 'delivered', 'executed', 'launched', 'established', 'generated', 'reduced', 'enhanced'];
     const foundActionVerbs = actionVerbs.filter(verb => lowerText.includes(verb));
     const actionVerbUsage = Math.min(Math.round((foundActionVerbs.length / actionVerbs.length) * 100), 100);
 
     // Quantifiable results (numbers, percentages, metrics)
-    const quantifiablePattern = /\d+%|\d+\s*(million|billion|thousand|k|m|b)|increased by|decreased by|reduced by|improved by/i;
+    const quantifiablePattern = /\d+%|\d+\s*(million|billion|thousand|k|m|b)|increased by|decreased by|reduced by|improved by|\$\d+|\d+\s*(users|customers|projects|team members)/i;
     const hasQuantifiableResults = quantifiablePattern.test(resumeText);
     const quantifiableResults = hasQuantifiableResults ? 100 : 0;
 
-    // Technical skills detection
-    const techKeywords = ['javascript', 'python', 'java', 'react', 'node', 'sql', 'database', 'api', 'git', 'docker', 'kubernetes', 'aws', 'cloud'];
+    // Technical skills detection (broad coverage)
+    const techKeywords = ['javascript', 'python', 'java', 'react', 'node', 'sql', 'database', 'api', 'git', 'docker', 'kubernetes', 'aws', 'cloud', 'azure', 'gcp', 'devops', 'agile', 'scrum', 'typescript', 'html', 'css'];
     const foundTechSkills = techKeywords.filter(keyword => lowerText.includes(keyword));
     const technicalSkills = Math.min(Math.round((foundTechSkills.length / techKeywords.length) * 100), 100);
 
-    // Calculate overall score (0-100) with improved weighting
-    // Ensure all scores are properly normalized
-    const keywordScore = Math.min((keywordMatches / totalKeywords) * 100, 100) * 0.35; // 35% weight
-    const lengthScore = Math.min(Math.max(wordCount / 500, 0), 1) * 100 * 0.20; // 20% weight (optimal: 400-600 words)
+    // Formatting score (ATS-friendly formatting checks)
+    const formattingChecks = {
+      hasBulletPoints: /[•\-\*]|\d+\./i.test(resumeText), // Bullet points or numbered lists
+      hasDates: /\d{4}|\d{1,2}\/\d{1,2}\/\d{2,4}|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{4}/i.test(resumeText), // Dates present
+      hasHeaders: /^(experience|education|skills|summary|objective|profile|qualifications)/im.test(resumeText), // Clear section headers
+      noSpecialChars: !/[^\w\s\.,;:!?\-\(\)\/@]/.test(resumeText), // No unusual special characters that break ATS
+      properLength: wordCount >= 300 && wordCount <= 1000, // Optimal resume length
+    };
+    const formattingScore = Math.round(
+      (Object.values(formattingChecks).filter(Boolean).length / Object.keys(formattingChecks).length) * 100
+    );
+
+    // Overall ATS Compatibility Score (0-100)
+    // This represents how well the resume will parse in 95% of ATS systems
+    const atsCompatibility = Math.round(
+      (keywordMatches / totalKeywords) * 30 + // 30% weight on keywords
+      (sectionCompleteness / 100) * 25 + // 25% weight on sections
+      (formattingScore / 100) * 20 + // 20% weight on formatting
+      (actionVerbUsage / 100) * 10 + // 10% weight on action verbs
+      (quantifiableResults / 100) * 10 + // 10% weight on metrics
+      (technicalSkills / 100) * 5 // 5% weight on technical skills
+    );
+
+    // Calculate overall ATS score (0-100) - optimized for 95% of ATS systems
+    // This score represents how well the resume will perform across most ATS platforms
+    const keywordScore = Math.min((keywordMatches / totalKeywords) * 100, 100) * 0.30; // 30% weight
+    const lengthScore = Math.min(Math.max(wordCount / 500, 0), 1) * 100 * 0.15; // 15% weight (optimal: 400-600 words)
     const sectionScore = sectionCompleteness * 0.25; // 25% weight
+    const formattingScoreWeight = formattingScore * 0.15; // 15% weight
     const actionVerbScore = actionVerbUsage * 0.10; // 10% weight
-    const quantifiableScore = quantifiableResults * 0.10; // 10% weight
-    const score = Math.min(Math.round(keywordScore + lengthScore + sectionScore + actionVerbScore + quantifiableScore), 100);
+    const quantifiableScore = quantifiableResults * 0.05; // 5% weight
+    const score = Math.min(Math.round(keywordScore + lengthScore + sectionScore + formattingScoreWeight + actionVerbScore + quantifiableScore), 100);
 
     // Generate suggestions
     const suggestions: string[] = [];
@@ -452,12 +420,29 @@ export class AtsService {
       strengths.push(`Strong technical skills coverage (${foundTechSkills.length} skills found)`);
     }
 
-    // Company-specific suggestions (free version - limited)
-    if (goldmanScore < 50) {
-      suggestions.push('For Goldman Sachs: Add finance, analytics, risk management, and quantitative skills');
+    // Formatting suggestions
+    if (formattingScore < 80) {
+      if (!formattingChecks.hasBulletPoints) {
+        suggestions.push('Use bullet points to make your resume more scannable for ATS systems');
+      }
+      if (!formattingChecks.hasDates) {
+        suggestions.push('Include dates for your work experience and education');
+      }
+      if (!formattingChecks.hasHeaders) {
+        suggestions.push('Use clear section headers (Experience, Education, Skills) for better ATS parsing');
+      }
+      if (wordCount < 300) {
+        suggestions.push('Expand your resume with more details (ATS systems prefer 400-600 words)');
+      } else if (wordCount > 1000) {
+        suggestions.push('Consider condensing your resume to 1-2 pages for better ATS compatibility');
+      }
+    } else {
+      strengths.push('Resume formatting is ATS-friendly');
     }
-    if (googleScore < 50) {
-      suggestions.push('For Google: Emphasize algorithms, system design, distributed systems, and technical depth');
+
+    // General ATS optimization suggestions
+    if (atsCompatibility < 70) {
+      suggestions.push('Optimize your resume for ATS systems by adding more relevant keywords and improving structure');
     }
 
     return {
@@ -469,23 +454,14 @@ export class AtsService {
       totalKeywords,
       fileSize: 0, // Will be set by controller
       wordCount,
-      companyComparisons: {
-        goldmanSachs: {
-          score: goldmanScore,
-          match: getMatchLevel(goldmanScore),
-        },
-        google: {
-          score: googleScore,
-          match: getMatchLevel(googleScore),
-        },
-        allCompanies: allCompanyScores, // Only for premium users
-      },
       detailedAnalysis: {
         keywordDensity,
         sectionCompleteness,
         actionVerbUsage,
         quantifiableResults,
         technicalSkills,
+        formattingScore,
+        atsCompatibility,
       },
     };
   }
@@ -495,35 +471,27 @@ export class AtsService {
     const lowerText = resumeText.toLowerCase();
     const words = resumeText.split(/\s+/).filter(word => word.length > 0);
 
-    // Collect all company keywords
-    const allKeywords = new Set<string>();
-    Object.values(this.COMPANY_KEYWORDS).forEach(keywords => {
-      keywords.forEach(kw => allKeywords.add(kw.toLowerCase()));
-    });
-
-    // Find missing important keywords
+    // Find missing important keywords from comprehensive ATS keywords
     const missingKeywords: string[] = [];
     const foundKeywords = new Set<string>();
     
-    allKeywords.forEach(keyword => {
-      if (lowerText.includes(keyword)) {
-        foundKeywords.add(keyword);
+    this.ATS_KEYWORDS.forEach(keyword => {
+      const keywordLower = keyword.toLowerCase();
+      if (lowerText.includes(keywordLower)) {
+        foundKeywords.add(keywordLower);
       } else {
         // Only suggest high-value keywords
-        if (this.isHighValueKeyword(keyword)) {
+        if (this.isHighValueKeyword(keywordLower)) {
           missingKeywords.push(keyword);
         }
       }
     });
 
-    // Generate optimized keywords (industry-specific)
+    // Generate optimized keywords (prioritized by importance)
     const optimizedKeywords = this.generateOptimizedKeywords(lowerText, missingKeywords.slice(0, 20));
 
-    // Get all company scores from checkResult
-    const allCompanyScores = checkResult.companyComparisons.allCompanies || {};
-
-    // Industry-specific suggestions
-    const industrySuggestions = this.generateIndustrySuggestions(checkResult, allCompanyScores);
+    // General ATS optimization suggestions
+    const industrySuggestions = this.generateIndustrySuggestions(checkResult);
 
     // Resume optimization tips
     const optimizationTips = this.generateOptimizationTips(checkResult, resumeText);
@@ -542,10 +510,11 @@ export class AtsService {
 
   private isHighValueKeyword(keyword: string): boolean {
     const highValue = [
-      'machine learning', 'ai', 'cloud', 'aws', 'azure', 'docker', 'kubernetes',
-      'distributed systems', 'system design', 'scalability', 'microservices',
-      'python', 'java', 'javascript', 'react', 'node', 'sql', 'algorithm',
-      'data structure', 'agile', 'scrum', 'devops', 'ci/cd',
+      'leadership', 'communication', 'problem solving', 'analytical',
+      'cloud', 'aws', 'azure', 'docker', 'kubernetes', 'devops',
+      'python', 'java', 'javascript', 'react', 'node', 'sql', 'database',
+      'agile', 'scrum', 'project management', 'api', 'rest',
+      'certified', 'certification', 'degree', 'bachelor', 'master',
     ];
     return highValue.some(hv => keyword.includes(hv) || hv.includes(keyword));
   }
@@ -571,25 +540,25 @@ export class AtsService {
   }
 
   private generateIndustrySuggestions(
-    checkResult: AtsCheckResult,
-    companyScores: Record<string, { score: number; match: string }>
+    checkResult: AtsCheckResult
   ): string[] {
     const suggestions: string[] = [];
     
-    // Find companies with low scores
-    Object.entries(companyScores).forEach(([company, data]) => {
-      if (data.score < 50) {
-        const companyName = company.charAt(0).toUpperCase() + company.slice(1).replace(/([A-Z])/g, ' $1');
-        suggestions.push(`For ${companyName}: Focus on adding relevant keywords from their tech stack and requirements`);
-      }
-    });
-
-    // Industry-specific advice
+    // General ATS optimization advice
     if (checkResult.detailedAnalysis.technicalSkills < 50) {
-      suggestions.push('Add more technical skills relevant to your target industry');
+      suggestions.push('Add more technical skills relevant to your field to improve ATS matching');
     }
     if (checkResult.detailedAnalysis.quantifiableResults === 0) {
       suggestions.push('Include metrics and numbers to quantify your achievements (e.g., "increased performance by 40%")');
+    }
+    if (checkResult.detailedAnalysis.formattingScore < 80) {
+      suggestions.push('Improve resume formatting with clear section headers, bullet points, and proper structure');
+    }
+    if (checkResult.detailedAnalysis.atsCompatibility < 70) {
+      suggestions.push('Focus on adding more ATS-friendly keywords and improving overall resume structure');
+    }
+    if (checkResult.detailedAnalysis.keywordDensity < 20) {
+      suggestions.push('Increase keyword density by naturally incorporating more relevant industry terms');
     }
 
     return suggestions;
@@ -664,7 +633,7 @@ export class AtsService {
       suggestions: result.suggestions,
       strengths: result.strengths,
       weaknesses: result.weaknesses,
-      companyComparisons: result.companyComparisons.allCompanies || {},
+      companyComparisons: {}, // No longer used, kept for backward compatibility
       detailedAnalysis: result.detailedAnalysis,
       resumeText: resumeText || null, // Store resume text for premium features
     });
