@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Sparkles } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Sparkles, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import UPIPayment from './UPIPayment';
@@ -51,8 +51,42 @@ export default function AtsChecker() {
     const [showPayment, setShowPayment] = useState(false);
     const [paymentOrder, setPaymentOrder] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [history, setHistory] = useState<AtsCheckResult[]>([]);
+    const [currentIndex, setCurrentIndex] = useState<number>(-1);
 
     const isPremium = user?.isPremium || false;
+
+    // Handle browser back/forward navigation
+    useEffect(() => {
+        const handlePopState = (e: PopStateEvent) => {
+            if (e.state && e.state.resultIndex !== undefined) {
+                const index = e.state.resultIndex;
+                if (index >= 0 && index < history.length) {
+                    setCurrentIndex(index);
+                    setResult(history[index]);
+                } else if (index === -1) {
+                    setCurrentIndex(-1);
+                    setResult(null);
+                }
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [history]);
+
+    // Update URL when result changes
+    useEffect(() => {
+        if (result && currentIndex >= 0) {
+            window.history.pushState(
+                { resultIndex: currentIndex },
+                '',
+                `?ats-check=${currentIndex}`
+            );
+        } else if (!result) {
+            window.history.pushState({ resultIndex: -1 }, '', window.location.pathname);
+        }
+    }, [result, currentIndex]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -95,7 +129,18 @@ export default function AtsChecker() {
                 }
             );
 
-            setResult(response.data);
+            const newResult = response.data;
+            setResult(newResult);
+            // Add to history
+            const newHistory = [...history, newResult];
+            setHistory(newHistory);
+            setCurrentIndex(newHistory.length - 1);
+            // Update URL
+            window.history.pushState(
+                { resultIndex: newHistory.length - 1 },
+                '',
+                `?ats-check=${newHistory.length - 1}`
+            );
         } catch (err: any) {
             if (err.response?.status === 401) {
                 setError('Please log in to use the ATS checker');
@@ -227,8 +272,44 @@ export default function AtsChecker() {
             ) : (
                 <div className="ats-results">
                     <div className="results-header">
-                        <h3>Analysis Results</h3>
-                        <button onClick={() => { setResult(null); setFile(null); }} className="new-check-btn">
+                        <div className="results-header-left">
+                            <button 
+                                onClick={() => {
+                                    if (currentIndex > 0) {
+                                        const prevIndex = currentIndex - 1;
+                                        setCurrentIndex(prevIndex);
+                                        setResult(history[prevIndex]);
+                                        window.history.pushState(
+                                            { resultIndex: prevIndex },
+                                            '',
+                                            `?ats-check=${prevIndex}`
+                                        );
+                                    } else {
+                                        setResult(null);
+                                        setFile(null);
+                                        setCurrentIndex(-1);
+                                        setHistory([]);
+                                        window.history.pushState({ resultIndex: -1 }, '', window.location.pathname);
+                                    }
+                                }}
+                                className="back-btn"
+                                disabled={currentIndex === -1}
+                            >
+                                <ArrowLeft size={18} />
+                                {currentIndex > 0 ? 'Previous' : 'Back'}
+                            </button>
+                            <h3>Analysis Results</h3>
+                        </div>
+                        <button 
+                            onClick={() => { 
+                                setResult(null); 
+                                setFile(null); 
+                                setCurrentIndex(-1);
+                                setHistory([]);
+                                window.history.pushState({ resultIndex: -1 }, '', window.location.pathname);
+                            }} 
+                            className="new-check-btn"
+                        >
                             New Check
                         </button>
                     </div>

@@ -180,16 +180,27 @@ export class AtsService {
     const remaining = Math.max(0, this.MAX_TRIES - recentUsage);
     const allowed = remaining > 0;
 
-    // Calculate next reset time
+    // Calculate next reset time based on oldest usage in the last 12 hours
     const resetAt = new Date();
     if (recentUsage > 0) {
+      // Find the oldest usage in the last 12 hours (not all time)
       const oldestUsage = await this.atsUsageRepository.findOne({
-        where: { userId },
+        where: {
+          userId,
+          createdAt: MoreThan(resetTime),
+        },
         order: { createdAt: 'ASC' },
       });
       if (oldestUsage) {
+        // Reset time is 12 hours after the oldest usage in the window
         resetAt.setTime(oldestUsage.createdAt.getTime() + this.RESET_HOURS * 60 * 60 * 1000);
+      } else {
+        // Fallback: reset in 12 hours from now
+        resetAt.setTime(Date.now() + this.RESET_HOURS * 60 * 60 * 1000);
       }
+    } else {
+      // No recent usage, reset time is 12 hours from now
+      resetAt.setTime(Date.now() + this.RESET_HOURS * 60 * 60 * 1000);
     }
 
     return { allowed, remaining, resetAt };
