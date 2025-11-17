@@ -195,6 +195,7 @@ export default function AtsChecker() {
     const handlePaymentSuccess = async () => {
         setShowPayment(false);
         setPaymentOrder(null);
+        setSelectedFix(null);
         // Refresh user data to get premium status
         window.location.reload();
     };
@@ -530,18 +531,6 @@ export default function AtsChecker() {
                 </div>
             )}
 
-            {/* Payment Modal */}
-            {showPayment && paymentOrder && (
-                <UPIPayment
-                    amount={paymentOrder.amount}
-                    orderId={paymentOrder.orderId}
-                    upiId={paymentOrder.upiId}
-                    merchantName={paymentOrder.merchantName}
-                    onClose={() => setShowPayment(false)}
-                    onSuccess={handlePaymentSuccess}
-                />
-            )}
-
             {/* Fix Details Modal - Premium Feature */}
             {showFixDetails && selectedFix && isPremium && (
                 <div className="fix-details-modal-overlay" onClick={() => setShowFixDetails(false)}>
@@ -599,7 +588,23 @@ export default function AtsChecker() {
                 </div>
             )}
 
-            {/* Premium Unlock Modal */}
+            {/* Payment Modal - Show when payment order exists */}
+            {showPayment && paymentOrder && (
+                <UPIPayment
+                    amount={paymentOrder.amount}
+                    orderId={paymentOrder.orderId}
+                    upiId={paymentOrder.upiId}
+                    merchantName={paymentOrder.merchantName}
+                    onClose={() => {
+                        setShowPayment(false);
+                        setPaymentOrder(null);
+                        setSelectedFix(null);
+                    }}
+                    onSuccess={handlePaymentSuccess}
+                />
+            )}
+
+            {/* Premium Unlock Modal - Show when no payment order yet */}
             {showPayment && !paymentOrder && selectedFix && (
                 <div className="premium-unlock-modal-overlay" onClick={() => {
                     setShowPayment(false);
