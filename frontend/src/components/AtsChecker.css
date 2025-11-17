@@ -1029,17 +1029,6 @@
   font-weight: 500;
 }
 
-.analysis-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.analysis-label {
-  font-size: 0.9rem;
-  color: #374151;
-  font-weight: 500;
-}
 
 .analysis-bar {
   width: 100%;
