@@ -63,6 +63,7 @@ async function bootstrap() {
         auth: '/api/auth',
         salary: '/api/salary',
         ats: '/api/ats',
+        common: '/api/common',
       },
     });
   });
