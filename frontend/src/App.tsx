@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calculator, MapPin, DollarSign, TrendingUp, LogOut, History, Building2, Plane, X, FileText, FileCheck, User } from 'lucide-react'
+import { Calculator, MapPin, DollarSign, TrendingUp, LogOut, History, Building2, Plane, X, FileText, FileCheck, User, Shield } from 'lucide-react'
 import axios from 'axios'
 import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
