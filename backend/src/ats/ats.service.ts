@@ -4,280 +4,37 @@ import { Repository, MoreThan } from 'typeorm';
 import * as mammoth from 'mammoth';
 import { AtsUsage } from './entities/ats-usage.entity';
 import { AtsCheck } from './entities/ats-check.entity';
+import pdfParse from 'pdf-parse';
 
-// PDF parsing using pdf-parse (CommonJS compatible, works in Node.js)
-let pdfParse: ((buffer: Buffer) => Promise<{ text: string }>) | null = null;
-let pdfParseLoadError: Error | null = null;
-
-// Lazy load pdf-parse
-const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: string }>> => {
-  if (pdfParse) {
-    return pdfParse;
-  }
-
-  if (pdfParseLoadError) {
-    throw pdfParseLoadError;
-  }
-
-  try {
-    // pdf-parse is a CommonJS module, use require()
-    const pdfParseModule = require('pdf-parse');
-    
-    // pdf-parse exports the function directly
-    if (typeof pdfParseModule === 'function') {
-      pdfParse = pdfParseModule;
-    } else if (pdfParseModule && typeof pdfParseModule.default === 'function') {
-      pdfParse = pdfParseModule.default;
-    } else if (pdfParseModule && typeof pdfParseModule.pdfParse === 'function') {
-      pdfParse = pdfParseModule.pdfParse;
-    } else {
-      throw new Error('pdf-parse module format is unexpected. Got type: ' + typeof pdfParseModule);
-    }
-    
-    console.log('pdf-parse loaded successfully');
-    return pdfParse;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Failed to load pdf-parse:', errorMessage);
-    
-    const finalError = new BadRequestException(
-      `PDF parsing is not available. Please ensure pdf-parse is installed. Error: ${errorMessage}`
-    );
-    pdfParseLoadError = finalError;
-    throw finalError;
-  }
-};
-
-// OCR support for scanned PDFs (optional, will fallback gracefully if not available)
-let tesseractWorker: any = null;
-let ocrAvailable = false;
-let ocrLoadError: Error | null = null;
-
-const loadOCR = async (): Promise<boolean> => {
-  if (ocrAvailable) return true;
-  if (ocrLoadError) return false;
-
-  try {
-    // Try to load tesseract.js for OCR
-    const Tesseract = require('tesseract.js');
-    if (Tesseract && Tesseract.createWorker) {
-      console.log('Initializing Tesseract OCR worker...');
-      tesseractWorker = await Tesseract.createWorker('eng');
-      ocrAvailable = true;
-      console.log('OCR (Tesseract.js) loaded successfully');
-      return true;
-    }
-    throw new Error('Tesseract.createWorker not available');
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.warn('OCR not available (tesseract.js not installed or failed to load):', errorMsg);
-    ocrLoadError = error instanceof Error ? error : new Error(errorMsg);
-    return false;
-  }
-};
-
-// Function to extract text from PDF using OCR (for scanned PDFs)
-const extractTextFromPdfWithOCR = async (buffer: Buffer): Promise<string> => {
-  const ocrReady = await loadOCR();
-  if (!ocrReady || !tesseractWorker) {
-    throw new BadRequestException(
-      'OCR is not available. Please install tesseract.js or use a PDF with selectable text.'
-    );
-  }
-
-  try {
-    // Use pdfjs-dist to render PDF pages to images, then OCR them
-    // pdfjs-dist is already installed in the project
-    let pdfjs: any = null;
-    try {
-      pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
-    } catch (e) {
-      // Fallback: try direct require
-      pdfjs = require('pdfjs-dist');
-    }
-
-    if (!pdfjs) {
-      throw new Error('pdfjs-dist not available');
-    }
-
-    console.log('Attempting OCR on PDF...');
-    
-    // Load PDF document
-    const loadingTask = pdfjs.getDocument({ data: buffer });
-    const pdfDocument = await loadingTask.promise;
-    const numPages = pdfDocument.numPages;
-    
-    console.log(`PDF has ${numPages} page(s), processing with OCR...`);
-    
-    let allText = '';
-    
-    // Process each page
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page = await pdfDocument.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR quality
-      
-      // Create a canvas to render the page
-      const { createCanvas } = require('canvas');
-      const canvas = createCanvas(viewport.width, viewport.height);
-      const context = canvas.getContext('2d');
-      
-      // Render PDF page to canvas
-      await page.render({
-        canvasContext: context,
-        viewport: viewport,
-      }).promise;
-      
-      // Convert canvas to image buffer
-      const imageBuffer = canvas.toBuffer('image/png');
-      
-      // OCR the image
-      console.log(`OCR processing page ${pageNum}/${numPages}...`);
-      const result = await tesseractWorker.recognize(imageBuffer);
-      const pageText = result.data.text || '';
-      
-      if (pageText.trim().length > 0) {
-        allText += pageText + '\n\n';
-        console.log(`Extracted ${pageText.length} characters from page ${pageNum}`);
-      }
-    }
-    
-    if (!allText || allText.trim().length < 10) {
-      throw new BadRequestException(
-        'OCR could not extract meaningful text from the PDF. The image quality may be too low or the PDF may be corrupted.'
-      );
-    }
-    
-    console.log(`Successfully extracted ${allText.length} characters using OCR from ${numPages} page(s)`);
-    return allText.trim();
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('OCR error:', errorMessage);
-    
-    // Check if it's a missing dependency error
-    if (errorMessage.includes('canvas') || errorMessage.includes('Cannot find module')) {
-      throw new BadRequestException(
-        'OCR requires additional dependencies (canvas package). ' +
-        'For now, please use a PDF with selectable text, or contact support for OCR setup.'
-      );
-    }
-    
-    throw new BadRequestException(
-      `OCR failed: ${errorMessage}. Please try with a higher quality scanned PDF or use a text-based PDF.`
-    );
-  }
-};
 
 // Function to extract text from PDF using pdf-parse
-const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promise<string> => {
-  const pdfParser = await loadPdfParse();
-  
+const extractTextFromPdf = async (buffer: Buffer): Promise<string> => {
   try {
-    // Validate buffer
     if (!buffer || buffer.length === 0) {
-      throw new BadRequestException('PDF file is empty or invalid');
+      throw new BadRequestException('PDF file is empty or invalid.');
     }
 
-    // Check if it's actually a PDF by checking the header
-    const pdfHeader = buffer.slice(0, 4).toString();
-    if (pdfHeader !== '%PDF') {
-      throw new BadRequestException('File does not appear to be a valid PDF file');
+    const data = await pdfParse(buffer);
+
+    if (!data || !data.text || data.text.trim().length < 10) {
+      throw new BadRequestException(
+        'Could not extract meaningful text from PDF. The file may be empty, corrupted, password-protected, or a scanned image.'
+      );
     }
 
-    // Parse PDF and extract text
-    const data = await pdfParser(buffer);
-    
-    // pdf-parse returns an object with a 'text' property and metadata
-    let text = '';
-    let numPages = 0;
-    
-    if (typeof data === 'string') {
-      text = data;
-    } else if (data && typeof data === 'object') {
-      // Check for text property
-      if ('text' in data) {
-        text = (data as any).text || '';
-      }
-      // Extract number of pages
-      if ('numpages' in data) {
-        numPages = typeof (data as any).numpages === 'number' ? (data as any).numpages : 0;
-      }
-      // Log metadata for debugging
-      if ('info' in data && (data as any).info) {
-        console.log('PDF Info:', JSON.stringify((data as any).info));
-      }
-      if ('metadata' in data && (data as any).metadata) {
-        console.log('PDF Metadata:', JSON.stringify((data as any).metadata));
-      }
-      if (numPages > 0) {
-        console.log('PDF Pages:', numPages);
-      }
-    } else {
-      text = String(data || '');
-    }
-    
-    // Clean up text (remove excessive whitespace but preserve structure)
-    text = text.replace(/\s+/g, ' ').trim();
-    
-    // More lenient check - allow very short text (might be a simple resume)
-    if (!text || text.length < 10) {
-      // Check if PDF has pages
-      
-      // If no text found and OCR is enabled, try OCR as fallback
-      if (numPages > 0 && tryOCR) {
-        console.log('No text found in PDF, attempting OCR...');
-        try {
-          return await extractTextFromPdfWithOCR(buffer);
-        } catch (ocrError) {
-          // If OCR fails, throw the original error
-          console.warn('OCR fallback failed:', ocrError instanceof Error ? ocrError.message : String(ocrError));
-          throw new BadRequestException(
-            `Could not extract text from PDF. The PDF appears to be image-based (scanned) or contains only images. ` +
-            `OCR attempt failed: ${ocrError instanceof Error ? ocrError.message : 'Unknown error'}. ` +
-            `Please use a PDF with selectable text, or ensure your scanned PDF has good image quality. ` +
-            `PDF has ${numPages} page(s) but no extractable text was found.`
-          );
-        }
-      }
-      
-      if (numPages > 0) {
-        throw new BadRequestException(
-          `Could not extract text from PDF. The PDF appears to be image-based (scanned) or contains only images. ` +
-          `Please use a PDF with selectable text, or convert your scanned PDF to text using OCR software first. ` +
-          `PDF has ${numPages} page(s) but no extractable text was found.`
-        );
-      } else {
-        throw new BadRequestException(
-          'Could not extract text from PDF. The file may be empty, corrupted, password-protected, or contain only images. ' +
-          'Please ensure the PDF contains selectable text and is not a scanned image.'
-        );
-      }
-    }
-    
-    console.log(`Successfully extracted ${text.length} characters from PDF`);
-    return text;
+    console.log(`Successfully extracted ${data.text.length} characters from PDF`);
+    return data.text.trim();
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('PDF parsing error:', errorMessage);
+
     if (error instanceof BadRequestException) {
       throw error;
     }
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('PDF parsing error:', errorMessage);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
-    // Provide more specific error messages
-    if (errorMessage.includes('password') || errorMessage.includes('encrypted')) {
-      throw new BadRequestException(
-        'PDF is password-protected. Please remove the password and try again.'
-      );
-    } else if (errorMessage.includes('corrupt') || errorMessage.includes('invalid')) {
-      throw new BadRequestException(
-        'PDF file appears to be corrupted or invalid. Please try with a different PDF file.'
-      );
-    } else {
-      throw new BadRequestException(
-        `Failed to parse PDF: ${errorMessage}. ` +
-        `Please ensure the file is a valid PDF with selectable text (not a scanned image) and is not password-protected.`
-      );
+    if (errorMessage.toLowerCase().includes('password')) {
+      throw new BadRequestException('PDF is password-protected. Please remove the password and try again.');
     }
+    throw new BadRequestException(`Failed to parse PDF: ${errorMessage}. Please ensure the file is a valid, text-based PDF.`);
   }
 };
 

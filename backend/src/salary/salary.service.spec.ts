@@ -66,8 +66,7 @@ describe('SalaryService', () => {
             const result = await service.calculateSalary({
                 ctc: 1000000,
                 city: 'Mumbai',
-                userId: 'test-user-id',
-            });
+            }, 'test-user-id');
 
             expect(result).toBeDefined();
             expect(result.ctc).toBe(1000000);
@@ -88,8 +87,7 @@ describe('SalaryService', () => {
             const result = await service.calculateSalary({
                 ctc: 1000000,
                 city: 'Delhi',
-                userId: 'test-user-id',
-            });
+            }, 'test-user-id');
 
             // EPF should be 12% of basic salary
             const expectedEPF = result.basicSalary * 0.12;
