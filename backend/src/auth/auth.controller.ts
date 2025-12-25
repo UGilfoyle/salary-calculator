@@ -10,7 +10,7 @@ import { LoginDto } from './dto/login.dto';
 
 @Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
@@ -33,7 +33,7 @@ export class AuthController {
   async githubCallback(@Req() req, @Res() res) {
     const user = await this.authService.validateGitHubUser(req.user);
     const result = await this.authService.login(user);
-    
+
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}&user=${encodeURIComponent(JSON.stringify(result.user))}`;
@@ -61,7 +61,7 @@ export class AuthController {
 
     const user = await this.authService.validateGoogleUser(req.user);
     const result = await this.authService.login(user);
-    
+
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}&user=${encodeURIComponent(JSON.stringify(result.user))}`;
@@ -72,9 +72,17 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() user: User) {
     const now = new Date();
-    const isPremiumActive = user.isPremium && 
-      user.premiumExpiresAt && 
-      new Date(user.premiumExpiresAt) > now;
+
+    // FREE PREMIUM FOR ALL USERS - 60 DAY TRIAL
+    // Everyone gets premium features until Feb 24, 2025
+    const freePremiumUntil = new Date('2025-02-24');
+    const isFreeTrial = now < freePremiumUntil;
+
+    const isPremiumActive = isFreeTrial || (
+      user.isPremium &&
+      user.premiumExpiresAt &&
+      new Date(user.premiumExpiresAt) > now
+    );
 
     return {
       id: user.id,
@@ -87,6 +95,8 @@ export class AuthController {
       role: user.role,
       isAdmin: user.role === 'admin',
       isPremium: isPremiumActive,
+      isFreeTrial: isFreeTrial,
+      freeTrialEnds: freePremiumUntil.toISOString(),
       premiumExpiresAt: user.premiumExpiresAt ? user.premiumExpiresAt.toISOString() : null,
     };
   }

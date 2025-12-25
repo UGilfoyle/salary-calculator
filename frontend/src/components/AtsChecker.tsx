@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Sparkles, ArrowLeft } from 'lucide-react';
+import { FileText, Upload, CheckCircle, X, AlertCircle, TrendingUp, Star, Sparkles, ArrowLeft, Layout, Palette } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import UPIPayment from './UPIPayment';
+import ResumeBuilder from './ResumeBuilder';
 import './AtsChecker.css';
 
 const getApiBaseUrl = () => {
@@ -36,6 +37,18 @@ interface AtsCheckResult {
         resumeOptimizationTips: string[];
         missingKeywords: string[];
         keywordReplacements: Array<{ current: string; suggested: string; reason: string }>;
+        grammarIssues?: Array<{
+            text: string;
+            reason: string;
+            index: number;
+            offset: number;
+        }>;
+        typographyAnalysis?: {
+            score: number;
+            issues: string[];
+            recommendations: string[];
+        };
+        overallQualityScore?: number;
     };
     remaining: number;
     resetAt: Date;
@@ -56,6 +69,13 @@ export default function AtsChecker() {
     const [selectedFix, setSelectedFix] = useState<string | null>(null);
     const [showFixDetails, setShowFixDetails] = useState(false);
     const [fixAnimation, setFixAnimation] = useState(false);
+    // NEW: State for results popups
+    const [showStrengthsPopup, setShowStrengthsPopup] = useState(false);
+    const [showSuggestionsPopup, setShowSuggestionsPopup] = useState(false);
+    const [showScorePopup, setShowScorePopup] = useState(false);
+    const [showAtsCompatibilityPopup, setShowAtsCompatibilityPopup] = useState(false);
+    const [showDetailedAnalysisPopup, setShowDetailedAnalysisPopup] = useState(false);
+    const [showResumeBuilder, setShowResumeBuilder] = useState(false);
 
     const isPremium = user?.isPremium || false;
 
@@ -280,7 +300,7 @@ export default function AtsChecker() {
                     </button>
 
                     <div className="usage-info">
-                        <p>Free users: 3 checks per 12 hours</p>
+                        <p>Free users: 3 checks per 4 hours</p>
                         {!isPremium && (
                             <p className="premium-hint">
                                 <Star size={16} />
@@ -331,91 +351,67 @@ export default function AtsChecker() {
                         </button>
                     </div>
 
-                    {/* Overall Score */}
-                    <div className="score-card" style={{ borderColor: getScoreColor(result.score) }}>
-                        <div className="score-circle" style={{ borderColor: getScoreColor(result.score) }}>
-                            <span className="score-value">{result.score}</span>
-                            <span className="score-label">{getScoreLabel(result.score)}</span>
-                        </div>
-                        <div className="score-details">
-                            <h4>Overall ATS Score</h4>
-                            <p>{result.keywordMatches} of {result.totalKeywords} keywords matched</p>
-                            <p>{result.wordCount} words • {(result.fileSize / 1024).toFixed(1)} KB</p>
-                        </div>
+                    {/* Score Summary Buttons - All inline on single row */}
+                    <div className="score-buttons-row">
+                        <button
+                            className="score-btn score-btn-primary"
+                            onClick={() => setShowScorePopup(true)}
+                            style={{ borderColor: getScoreColor(result.score) }}
+                        >
+                            <span className="score-btn-value" style={{ color: getScoreColor(result.score) }}>{result.score}</span>
+                            <span className="score-btn-label">ATS Score</span>
+                        </button>
+
+                        <button
+                            className="score-btn score-btn-compat"
+                            onClick={() => setShowAtsCompatibilityPopup(true)}
+                            style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}
+                        >
+                            <span className="score-btn-value" style={{ color: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>{result.detailedAnalysis.atsCompatibility}%</span>
+                            <span className="score-btn-label">ATS Compatible</span>
+                        </button>
+
+                        <button
+                            className="score-btn score-btn-analysis"
+                            onClick={() => setShowDetailedAnalysisPopup(true)}
+                        >
+                            <TrendingUp size={22} />
+                            <span className="score-btn-label">Details</span>
+                        </button>
                     </div>
 
-                    {/* ATS Compatibility Score */}
-                    <div className="ats-compatibility-section">
-                        <h4>
-                            <CheckCircle size={20} />
-                            ATS Compatibility
-                        </h4>
-                        <div className="compatibility-card" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
-                            <div className="compatibility-score-circle" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
-                                <span className="compatibility-value">{result.detailedAnalysis.atsCompatibility}%</span>
-                                <span className="compatibility-label-line">ATS</span>
-                                <span className="compatibility-label-line">COMPATIBLE</span>
-                            </div>
-                            <div className="compatibility-details">
-                                <p>This score indicates how well your resume will perform across <strong>95% of ATS systems</strong> used by companies worldwide.</p>
-                                <p className="compatibility-note">Our algorithm analyzes keywords, formatting, structure, and content to ensure maximum compatibility with most <em>Applicant Tracking Systems</em>.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Detailed Analysis */}
-                    <div className="detailed-analysis">
-                        <h4>
-                            <TrendingUp size={20} />
-                            Detailed Analysis
-                        </h4>
-                        <div className="analysis-grid">
-                            <div className="analysis-item">
-                                <span className="analysis-label">Keyword Density</span>
-                                <span className="analysis-value">{result.detailedAnalysis.keywordDensity.toFixed(1)}/1000 words</span>
-                            </div>
-                            <div className="analysis-item">
-                                <span className="analysis-label">Section Completeness</span>
-                                <span className="analysis-value">{result.detailedAnalysis.sectionCompleteness}%</span>
-                            </div>
-                            <div className="analysis-item">
-                                <span className="analysis-label">Action Verb Usage</span>
-                                <span className="analysis-value">{result.detailedAnalysis.actionVerbUsage}%</span>
-                            </div>
-                            <div className="analysis-item">
-                                <span className="analysis-label">Quantifiable Results</span>
-                                <span className="analysis-value">{result.detailedAnalysis.quantifiableResults > 0 ? 'Yes' : 'No'}</span>
-                            </div>
-                            <div className="analysis-item">
-                                <span className="analysis-label">Technical Skills</span>
-                                <span className="analysis-value">{result.detailedAnalysis.technicalSkills}%</span>
-                            </div>
-                            <div className="analysis-item">
-                                <span className="analysis-label">Formatting Score</span>
-                                <span className="analysis-value">{result.detailedAnalysis.formattingScore}%</span>
-                            </div>
-                            <div className="analysis-item highlight-item">
-                                <span className="analysis-label">ATS Compatibility</span>
-                                <span className="analysis-value" style={{ color: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
-                                    {result.detailedAnalysis.atsCompatibility}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Strengths */}
-                    {result.strengths.length > 0 && (
-                        <div className="strengths-section">
-                            <h4>
+                    {/* Result Summary Buttons */}
+                    <div className="result-buttons-row">
+                        {result.strengths.length > 0 && (
+                            <button
+                                className="result-btn strengths-btn"
+                                onClick={() => setShowStrengthsPopup(true)}
+                            >
                                 <CheckCircle size={20} />
-                                Strengths
-                            </h4>
-                            <ul>
-                                {result.strengths.map((strength, idx) => (
-                                    <li key={idx}>{strength}</li>
-                                ))}
-                            </ul>
-                        </div>
+                                View Strengths ({result.strengths.length})
+                            </button>
+                        )}
+                        {result.suggestions.length > 0 && (
+                            <button
+                                className="result-btn suggestions-btn"
+                                onClick={() => setShowSuggestionsPopup(true)}
+                            >
+                                <Sparkles size={20} />
+                                View Suggestions ({result.suggestions.length})
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Premium Resume Builder Button */}
+                    {isPremium && (
+                        <button
+                            className="premium-builder-btn"
+                            onClick={() => setShowResumeBuilder(true)}
+                        >
+                            <Layout size={20} />
+                            <span>Open Resume Builder</span>
+                            <Palette size={18} />
+                        </button>
                     )}
 
                     {/* Weaknesses - Interactive Fix Suggestions */}
@@ -434,13 +430,13 @@ export default function AtsChecker() {
                                             if (isPremium) {
                                                 setSelectedFix(weakness);
                                                 setShowFixDetails(true);
-                                                setShowPayment(false); // Ensure payment modal is closed
+                                                setShowPayment(false);
                                                 setFixAnimation(true);
                                                 setTimeout(() => setFixAnimation(false), 600);
                                             } else {
                                                 setSelectedFix(weakness);
                                                 setShowPayment(true);
-                                                setShowFixDetails(false); // Ensure fix details modal is closed
+                                                setShowFixDetails(false);
                                             }
                                         }}
                                     >
@@ -460,71 +456,7 @@ export default function AtsChecker() {
                         </div>
                     )}
 
-                    {/* Suggestions */}
-                    {result.suggestions.length > 0 && (
-                        <div className="suggestions-section">
-                            <h4>
-                                <Sparkles size={20} />
-                                Suggestions
-                            </h4>
-                            <ul>
-                                {result.suggestions.map((suggestion, idx) => (
-                                    <li key={idx}>{suggestion}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* Premium Features */}
-                    {!isPremium && (
-                        <div className="premium-upgrade-card">
-                            <div className="year-end-badge">🎉 Year End Offer</div>
-                            <Star size={32} />
-                            <h4>Unlock Premium Features</h4>
-                            <p className="premium-description">Get detailed keyword analysis, advanced optimization tips, and personalized resume enhancement recommendations</p>
-
-                            {/* Show Resume Issues */}
-                            {result.weaknesses.length > 0 && (
-                                <div className="resume-issues-preview">
-                                    <h5>Issues Found in Your Resume:</h5>
-                                    <ul>
-                                        {result.weaknesses.slice(0, 3).map((weakness, idx) => (
-                                            <li key={idx}>
-                                                <AlertCircle size={16} />
-                                                {weakness}
-                                            </li>
-                                        ))}
-                                        {result.weaknesses.length > 3 && (
-                                            <li className="more-issues">+{result.weaknesses.length - 3} more issues</li>
-                                        )}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {/* Premium Features List */}
-                            <div className="premium-features-list">
-                                <h5>With Premium, You'll Get:</h5>
-                                <ul>
-                                    <li>✅ Detailed keyword optimization suggestions</li>
-                                    <li>✅ Missing keywords specific to your industry</li>
-                                    <li>✅ Keyword replacement recommendations</li>
-                                    <li>✅ Industry-specific optimization tips</li>
-                                    <li>✅ Advanced resume enhancement strategies</li>
-                                    <li>✅ Unlimited ATS checks (no 3-check limit)</li>
-                                </ul>
-                            </div>
-
-                            <div className="premium-pricing">
-                                <span className="original-price">₹99</span>
-                                <span className="current-price">₹49</span>
-                                <span className="discount-badge">50% OFF</span>
-                            </div>
-                            <button onClick={handleUpgrade} className="upgrade-btn">
-                                Upgrade to Premium - ₹49
-                            </button>
-                            <p className="premium-note">Limited time offer - Year End Special!</p>
-                        </div>
-                    )}
+                    {/* Premium features are now only in popups - removed inline card */}
 
                     {/* Usage Info */}
                     <div className="usage-info-footer">
@@ -547,41 +479,141 @@ export default function AtsChecker() {
                         <div className="fix-details-content">
                             {result && result.premiumFeatures && (
                                 <>
-                                    {result.premiumFeatures.resumeOptimizationTips
-                                        .filter(tip => tip.toLowerCase().includes(selectedFix.toLowerCase().split(' ')[0]))
-                                        .map((tip, idx) => (
-                                            <div key={idx} className="fix-tip-card">
-                                                <div className="tip-number">{idx + 1}</div>
-                                                <p>{tip}</p>
+                                    {/* Show general tips for this type of issue */}
+                                    <div className="fix-section">
+                                        <h4>📝 Recommended Actions</h4>
+                                        {selectedFix.toLowerCase().includes('keyword') && (
+                                            <ul className="fix-tips-list">
+                                                <li>Add more industry-specific keywords from job descriptions</li>
+                                                <li>Include technical skills relevant to your target role</li>
+                                                <li>Use exact keyword matches from the job posting</li>
+                                            </ul>
+                                        )}
+                                        {selectedFix.toLowerCase().includes('contact') && (
+                                            <ul className="fix-tips-list">
+                                                <li>Add your professional email address</li>
+                                                <li>Include a phone number with area code</li>
+                                                <li>Add your LinkedIn profile URL</li>
+                                                <li>Include city/location if relevant</li>
+                                            </ul>
+                                        )}
+                                        {selectedFix.toLowerCase().includes('experience') && (
+                                            <ul className="fix-tips-list">
+                                                <li>Use strong action verbs like "developed", "managed", "increased"</li>
+                                                <li>Quantify achievements with numbers and percentages</li>
+                                                <li>Focus on impact and results, not just responsibilities</li>
+                                            </ul>
+                                        )}
+                                        {selectedFix.toLowerCase().includes('format') && (
+                                            <ul className="fix-tips-list">
+                                                <li>Use consistent bullet point formatting</li>
+                                                <li>Keep font size between 10-12pt</li>
+                                                <li>Use clear section headers</li>
+                                                <li>Maintain consistent spacing throughout</li>
+                                            </ul>
+                                        )}
+                                        {!selectedFix.toLowerCase().includes('keyword') &&
+                                            !selectedFix.toLowerCase().includes('contact') &&
+                                            !selectedFix.toLowerCase().includes('experience') &&
+                                            !selectedFix.toLowerCase().includes('format') && (
+                                                <ul className="fix-tips-list">
+                                                    <li>Review your resume for this specific issue</li>
+                                                    <li>Compare with successful resume examples</li>
+                                                    <li>Consider using our optimization suggestions below</li>
+                                                </ul>
+                                            )}
+                                    </div>
+
+                                    {/* Show optimization tips if available */}
+                                    {result.premiumFeatures.resumeOptimizationTips &&
+                                        result.premiumFeatures.resumeOptimizationTips.length > 0 && (
+                                            <div className="fix-section">
+                                                <h4>💡 Optimization Tips</h4>
+                                                <ul className="fix-tips-list">
+                                                    {result.premiumFeatures.resumeOptimizationTips.slice(0, 4).map((tip, idx) => (
+                                                        <li key={idx}>{tip}</li>
+                                                    ))}
+                                                </ul>
                                             </div>
-                                        ))}
-                                    {result.premiumFeatures.keywordReplacements
-                                        .filter(replacement => replacement.reason.toLowerCase().includes(selectedFix.toLowerCase().split(' ')[0]))
-                                        .map((replacement, idx) => (
-                                            <div key={idx} className="keyword-replacement-card">
-                                                <div className="replacement-before">
-                                                    <span className="label">Current:</span>
-                                                    <span className="value">{replacement.current}</span>
-                                                </div>
-                                                <div className="replacement-arrow">→</div>
-                                                <div className="replacement-after">
-                                                    <span className="label">Suggested:</span>
-                                                    <span className="value">{replacement.suggested}</span>
-                                                </div>
-                                                <div className="replacement-reason">
-                                                    <strong>Why:</strong> {replacement.reason}
+                                        )}
+
+                                    {/* Show keyword suggestions if available */}
+                                    {result.premiumFeatures.missingKeywords &&
+                                        result.premiumFeatures.missingKeywords.length > 0 && (
+                                            <div className="fix-section">
+                                                <h4>🔑 Keywords to Add</h4>
+                                                <div className="keyword-tags">
+                                                    {result.premiumFeatures.missingKeywords.slice(0, 8).map((kw, idx) => (
+                                                        <span key={idx} className="keyword-tag">{kw}</span>
+                                                    ))}
                                                 </div>
                                             </div>
-                                        ))}
+                                        )}
+
+                                    {/* Show industry suggestions if available */}
+                                    {result.premiumFeatures.industrySpecificSuggestions &&
+                                        result.premiumFeatures.industrySpecificSuggestions.length > 0 && (
+                                            <div className="fix-section">
+                                                <h4>🎯 Industry-Specific Tips</h4>
+                                                <ul className="fix-tips-list">
+                                                    {result.premiumFeatures.industrySpecificSuggestions.slice(0, 3).map((sug: string, idx: number) => (
+                                                        <li key={idx}>{sug}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                    {/* Show grammar issues if available */}
+                                    {result.premiumFeatures.grammarIssues &&
+                                        result.premiumFeatures.grammarIssues.length > 0 && (
+                                            <div className="fix-section">
+                                                <h4>✍️ Writing Improvements</h4>
+                                                <ul className="fix-tips-list grammar-list">
+                                                    {result.premiumFeatures.grammarIssues.slice(0, 5).map((issue, idx) => (
+                                                        <li key={idx}>
+                                                            <span className="grammar-text">"{issue.text}"</span>
+                                                            <span className="grammar-reason">{issue.reason}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                    {/* Show typography analysis if available */}
+                                    {result.premiumFeatures.typographyAnalysis && (
+                                        <div className="fix-section">
+                                            <h4>📝 Formatting Score: {result.premiumFeatures.typographyAnalysis.score}%</h4>
+                                            {result.premiumFeatures.typographyAnalysis.recommendations.length > 0 && (
+                                                <ul className="fix-tips-list">
+                                                    {result.premiumFeatures.typographyAnalysis.recommendations.slice(0, 3).map((rec, idx) => (
+                                                        <li key={idx}>{rec}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Show overall quality score */}
+                                    {result.premiumFeatures.overallQualityScore !== undefined && (
+                                        <div className="fix-section quality-section">
+                                            <h4>⭐ Overall Quality Score</h4>
+                                            <div className="quality-score-display">
+                                                <span className="quality-value">{result.premiumFeatures.overallQualityScore}%</span>
+                                                <span className="quality-label">
+                                                    {result.premiumFeatures.overallQualityScore >= 80 ? 'Excellent' :
+                                                        result.premiumFeatures.overallQualityScore >= 60 ? 'Good' :
+                                                            result.premiumFeatures.overallQualityScore >= 40 ? 'Needs Work' : 'Poor'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
-                            {(!result || !result.premiumFeatures ||
-                                (result.premiumFeatures.resumeOptimizationTips.length === 0 &&
-                                    result.premiumFeatures.keywordReplacements.length === 0)) && (
-                                    <div className="fix-tip-card">
-                                        <p>Detailed fix instructions for "{selectedFix}" will be available here. This feature provides step-by-step guidance to improve your resume.</p>
-                                    </div>
-                                )}
+                            {(!result || !result.premiumFeatures) && (
+                                <div className="fix-tip-card">
+                                    <p>Premium features are loading... Please try again.</p>
+                                </div>
+                            )}
                         </div>
                         <button className="apply-fix-btn" onClick={() => setShowFixDetails(false)}>
                             Got it! ✓
@@ -643,18 +675,194 @@ export default function AtsChecker() {
                             </div>
                         </div>
                         <div className="unlock-pricing">
-                            <span className="original-price">₹99</span>
-                            <span className="current-price">₹49</span>
-                            <span className="discount-badge">50% OFF</span>
+                            <span className="original-price">₹119</span>
+                            <span className="current-price">₹30</span>
+                            <span className="discount-badge">75% OFF</span>
                         </div>
                         <button
                             className="unlock-now-btn"
                             onClick={handleUpgrade}
                         >
-                            Unlock Now - ₹49
+                            Unlock Now - ₹30
                         </button>
-                        <p className="unlock-note">Year End Special Offer - Limited Time!</p>
+                        <p className="unlock-note">🎉 Year End Special - 75% OFF!</p>
                     </div>
+                </div>
+            )}
+
+            {/* Strengths Popup Modal */}
+            {showStrengthsPopup && result && (
+                <div className="result-modal-overlay" onClick={() => setShowStrengthsPopup(false)}>
+                    <div className="result-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-modal-btn" onClick={() => setShowStrengthsPopup(false)}>
+                            <X size={24} />
+                        </button>
+                        <div className="result-modal-header strengths">
+                            <CheckCircle size={32} />
+                            <h3>Your Resume Strengths</h3>
+                        </div>
+                        <div className="result-modal-content">
+                            <ul className="result-list">
+                                {result.strengths.map((strength, idx) => (
+                                    <li key={idx}>
+                                        <CheckCircle size={16} />
+                                        <span>{strength}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <button className="result-modal-close-btn" onClick={() => setShowStrengthsPopup(false)}>
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Suggestions Popup Modal */}
+            {showSuggestionsPopup && result && (
+                <div className="result-modal-overlay" onClick={() => setShowSuggestionsPopup(false)}>
+                    <div className="result-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-modal-btn" onClick={() => setShowSuggestionsPopup(false)}>
+                            <X size={24} />
+                        </button>
+                        <div className="result-modal-header suggestions">
+                            <Sparkles size={32} />
+                            <h3>Improvement Suggestions</h3>
+                        </div>
+                        <div className="result-modal-content">
+                            <ul className="result-list">
+                                {result.suggestions.map((suggestion, idx) => (
+                                    <li key={idx}>
+                                        <Sparkles size={16} />
+                                        <span>{suggestion}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <button className="result-modal-close-btn" onClick={() => setShowSuggestionsPopup(false)}>
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Overall ATS Score Popup */}
+            {showScorePopup && result && (
+                <div className="result-modal-overlay" onClick={() => setShowScorePopup(false)}>
+                    <div className="result-modal score-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-modal-btn" onClick={() => setShowScorePopup(false)}>
+                            <X size={24} />
+                        </button>
+                        <div className="score-popup-header" style={{ borderColor: getScoreColor(result.score) }}>
+                            <div className="score-popup-circle" style={{ borderColor: getScoreColor(result.score) }}>
+                                <span className="score-popup-value" style={{ color: getScoreColor(result.score) }}>{result.score}</span>
+                                <span className="score-popup-label">{getScoreLabel(result.score)}</span>
+                            </div>
+                            <h3>Overall ATS Score</h3>
+                        </div>
+                        <div className="result-modal-content">
+                            <div className="score-info-grid">
+                                <div className="score-info-item">
+                                    <span className="info-label">Keywords Matched</span>
+                                    <span className="info-value">{result.keywordMatches} / {result.totalKeywords}</span>
+                                </div>
+                                <div className="score-info-item">
+                                    <span className="info-label">Word Count</span>
+                                    <span className="info-value">{result.wordCount}</span>
+                                </div>
+                                <div className="score-info-item">
+                                    <span className="info-label">File Size</span>
+                                    <span className="info-value">{(result.fileSize / 1024).toFixed(1)} KB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button className="result-modal-close-btn" onClick={() => setShowScorePopup(false)}>
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ATS Compatibility Popup */}
+            {showAtsCompatibilityPopup && result && (
+                <div className="result-modal-overlay" onClick={() => setShowAtsCompatibilityPopup(false)}>
+                    <div className="result-modal compat-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-modal-btn" onClick={() => setShowAtsCompatibilityPopup(false)}>
+                            <X size={24} />
+                        </button>
+                        <div className="score-popup-header" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
+                            <div className="score-popup-circle" style={{ borderColor: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>
+                                <span className="score-popup-value" style={{ color: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>{result.detailedAnalysis.atsCompatibility}%</span>
+                                <span className="score-popup-label">Compatible</span>
+                            </div>
+                            <h3>ATS Compatibility</h3>
+                        </div>
+                        <div className="result-modal-content">
+                            <p className="compat-desc">This score indicates how well your resume will perform across <strong>95% of ATS systems</strong> used by companies worldwide.</p>
+                            <p className="compat-note">Our algorithm analyzes keywords, formatting, structure, and content to ensure maximum compatibility.</p>
+                        </div>
+                        <button className="result-modal-close-btn" onClick={() => setShowAtsCompatibilityPopup(false)}>
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Detailed Analysis Popup */}
+            {showDetailedAnalysisPopup && result && (
+                <div className="result-modal-overlay" onClick={() => setShowDetailedAnalysisPopup(false)}>
+                    <div className="result-modal analysis-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-modal-btn" onClick={() => setShowDetailedAnalysisPopup(false)}>
+                            <X size={24} />
+                        </button>
+                        <div className="result-modal-header analysis">
+                            <TrendingUp size={32} />
+                            <h3>Detailed Analysis</h3>
+                        </div>
+                        <div className="result-modal-content">
+                            <div className="analysis-popup-grid">
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Keyword Density</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.keywordDensity.toFixed(1)}/1000</span>
+                                </div>
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Section Completeness</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.sectionCompleteness}%</span>
+                                </div>
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Action Verbs</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.actionVerbUsage}%</span>
+                                </div>
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Quantifiable Results</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.quantifiableResults > 0 ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Technical Skills</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.technicalSkills}%</span>
+                                </div>
+                                <div className="analysis-popup-item">
+                                    <span className="analysis-label">Formatting Score</span>
+                                    <span className="analysis-value">{result.detailedAnalysis.formattingScore}%</span>
+                                </div>
+                                <div className="analysis-popup-item highlight">
+                                    <span className="analysis-label">ATS Compatibility</span>
+                                    <span className="analysis-value" style={{ color: getScoreColor(result.detailedAnalysis.atsCompatibility) }}>{result.detailedAnalysis.atsCompatibility}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button className="result-modal-close-btn" onClick={() => setShowDetailedAnalysisPopup(false)}>
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Resume Builder Modal (Full Screen) */}
+            {/* Resume Builder Modal (Full Screen) */}
+            {showResumeBuilder && (
+                <div className="resume-builder-overlay">
+                    <ResumeBuilder onClose={() => setShowResumeBuilder(false)} />
                 </div>
             )}
         </div>

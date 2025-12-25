@@ -8,6 +8,7 @@ import { AdminModule } from './admin/admin.module';
 import { AtsModule } from './ats/ats.module';
 import { PaymentModule } from './payment/payment.module';
 import { CommonModule } from './common/common.module';
+import { PdfMergeModule } from './pdf-merge/pdf-merge.module';
 import { SalaryCalculation } from './salary/entities/salary-calculation.entity';
 import { CityTaxData } from './salary/entities/city-tax-data.entity';
 import { User } from './user/entities/user.entity';
@@ -45,6 +46,7 @@ import { Designation } from './common/entities/designation.entity';
     AtsModule,
     PaymentModule,
     CommonModule,
+    PdfMergeModule,
   ],
 })
 export class AppModule { }

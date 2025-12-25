@@ -22,7 +22,7 @@ const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: strin
   try {
     // pdf-parse is a CommonJS module, use require()
     const pdfParseModule = require('pdf-parse');
-    
+
     // pdf-parse exports the function directly
     if (typeof pdfParseModule === 'function') {
       pdfParse = pdfParseModule;
@@ -33,13 +33,13 @@ const loadPdfParse = async (): Promise<(buffer: Buffer) => Promise<{ text: strin
     } else {
       throw new Error('pdf-parse module format is unexpected. Got type: ' + typeof pdfParseModule);
     }
-    
+
     console.log('pdf-parse loaded successfully');
     return pdfParse;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('Failed to load pdf-parse:', errorMessage);
-    
+
     const finalError = new BadRequestException(
       `PDF parsing is not available. Please ensure pdf-parse is installed. Error: ${errorMessage}`
     );
@@ -101,58 +101,58 @@ const extractTextFromPdfWithOCR = async (buffer: Buffer): Promise<string> => {
     }
 
     console.log('Attempting OCR on PDF...');
-    
+
     // Load PDF document
     const loadingTask = pdfjs.getDocument({ data: buffer });
     const pdfDocument = await loadingTask.promise;
     const numPages = pdfDocument.numPages;
-    
+
     console.log(`PDF has ${numPages} page(s), processing with OCR...`);
-    
+
     let allText = '';
-    
+
     // Process each page
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdfDocument.getPage(pageNum);
       const viewport = page.getViewport({ scale: 2.0 }); // Higher scale for better OCR quality
-      
+
       // Create a canvas to render the page
       const { createCanvas } = require('canvas');
       const canvas = createCanvas(viewport.width, viewport.height);
       const context = canvas.getContext('2d');
-      
+
       // Render PDF page to canvas
       await page.render({
         canvasContext: context,
         viewport: viewport,
       }).promise;
-      
+
       // Convert canvas to image buffer
       const imageBuffer = canvas.toBuffer('image/png');
-      
+
       // OCR the image
       console.log(`OCR processing page ${pageNum}/${numPages}...`);
       const result = await tesseractWorker.recognize(imageBuffer);
       const pageText = result.data.text || '';
-      
+
       if (pageText.trim().length > 0) {
         allText += pageText + '\n\n';
         console.log(`Extracted ${pageText.length} characters from page ${pageNum}`);
       }
     }
-    
+
     if (!allText || allText.trim().length < 10) {
       throw new BadRequestException(
         'OCR could not extract meaningful text from the PDF. The image quality may be too low or the PDF may be corrupted.'
       );
     }
-    
+
     console.log(`Successfully extracted ${allText.length} characters using OCR from ${numPages} page(s)`);
     return allText.trim();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('OCR error:', errorMessage);
-    
+
     // Check if it's a missing dependency error
     if (errorMessage.includes('canvas') || errorMessage.includes('Cannot find module')) {
       throw new BadRequestException(
@@ -160,7 +160,7 @@ const extractTextFromPdfWithOCR = async (buffer: Buffer): Promise<string> => {
         'For now, please use a PDF with selectable text, or contact support for OCR setup.'
       );
     }
-    
+
     throw new BadRequestException(
       `OCR failed: ${errorMessage}. Please try with a higher quality scanned PDF or use a text-based PDF.`
     );
@@ -170,7 +170,7 @@ const extractTextFromPdfWithOCR = async (buffer: Buffer): Promise<string> => {
 // Function to extract text from PDF using pdf-parse
 const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promise<string> => {
   const pdfParser = await loadPdfParse();
-  
+
   try {
     // Validate buffer
     if (!buffer || buffer.length === 0) {
@@ -185,11 +185,11 @@ const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promi
 
     // Parse PDF and extract text
     const data = await pdfParser(buffer);
-    
+
     // pdf-parse returns an object with a 'text' property and metadata
     let text = '';
     let numPages = 0;
-    
+
     if (typeof data === 'string') {
       text = data;
     } else if (data && typeof data === 'object') {
@@ -214,14 +214,14 @@ const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promi
     } else {
       text = String(data || '');
     }
-    
+
     // Clean up text (remove excessive whitespace but preserve structure)
     text = text.replace(/\s+/g, ' ').trim();
-    
+
     // More lenient check - allow very short text (might be a simple resume)
     if (!text || text.length < 10) {
       // Check if PDF has pages
-      
+
       // If no text found and OCR is enabled, try OCR as fallback
       if (numPages > 0 && tryOCR) {
         console.log('No text found in PDF, attempting OCR...');
@@ -238,7 +238,7 @@ const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promi
           );
         }
       }
-      
+
       if (numPages > 0) {
         throw new BadRequestException(
           `Could not extract text from PDF. The PDF appears to be image-based (scanned) or contains only images. ` +
@@ -252,7 +252,7 @@ const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promi
         );
       }
     }
-    
+
     console.log(`Successfully extracted ${text.length} characters from PDF`);
     return text;
   } catch (error) {
@@ -262,7 +262,7 @@ const extractTextFromPdf = async (buffer: Buffer, tryOCR: boolean = true): Promi
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('PDF parsing error:', errorMessage);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
+
     // Provide more specific error messages
     if (errorMessage.includes('password') || errorMessage.includes('encrypted')) {
       throw new BadRequestException(
@@ -306,14 +306,36 @@ export interface AtsCheckResult {
     resumeOptimizationTips: string[];
     missingKeywords: string[];
     keywordReplacements: Array<{ current: string; suggested: string; reason: string }>;
+    // NEW: Grammar and Typography Analysis
+    grammarIssues?: Array<{
+      text: string;
+      reason: string;
+      index: number;
+      offset: number;
+    }>;
+    typographyAnalysis?: {
+      score: number;
+      issues: string[];
+      recommendations: string[];
+    };
+    overallQualityScore?: number;
   };
+}
+
+// Grammar checking using write-good (open-source linter)
+let writeGood: any = null;
+try {
+  writeGood = require('write-good');
+  console.log('✅ write-good grammar checker loaded');
+} catch (e) {
+  console.warn('⚠️ write-good not available, grammar checking disabled');
 }
 
 @Injectable()
 export class AtsService {
   private readonly MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
   private readonly MAX_TRIES = 3;
-  private readonly RESET_HOURS = 12;
+  private readonly RESET_HOURS = 4;
 
   // Comprehensive ATS keywords that work for 95% of companies
   // These keywords are commonly searched by ATS systems across industries
@@ -321,36 +343,36 @@ export class AtsService {
     // Core resume sections
     'skills', 'experience', 'education', 'certification', 'achievement', 'qualification',
     'summary', 'objective', 'profile', 'professional', 'career',
-    
+
     // Soft skills (universally valued)
     'leadership', 'communication', 'teamwork', 'collaboration', 'problem solving',
     'analytical', 'critical thinking', 'adaptability', 'initiative', 'innovation',
     'management', 'organization', 'planning', 'strategy', 'decision making',
-    
+
     // Technical skills (broad coverage)
     'technical', 'proficient', 'expert', 'knowledge', 'competent', 'skilled',
     'javascript', 'python', 'java', 'sql', 'database', 'api', 'rest', 'web',
     'cloud', 'aws', 'azure', 'gcp', 'devops', 'ci/cd', 'git', 'github',
     'agile', 'scrum', 'project management', 'software', 'development',
-    
+
     // Action verbs (ATS systems look for these)
     'achieved', 'improved', 'developed', 'managed', 'implemented', 'created',
     'designed', 'built', 'led', 'increased', 'optimized', 'delivered',
     'executed', 'launched', 'established', 'generated', 'reduced', 'enhanced',
-    
+
     // Education & credentials
     'bachelor', 'master', 'phd', 'degree', 'diploma', 'certified', 'certification',
     'university', 'college', 'institute', 'course', 'training', 'workshop',
-    
+
     // Quantifiable terms (ATS systems favor metrics)
     'percent', 'percentage', 'million', 'billion', 'thousand', 'increased by',
     'decreased by', 'reduced by', 'improved by', 'saved', 'generated',
-    
+
     // Industry-agnostic terms
     'client', 'customer', 'stakeholder', 'vendor', 'partner', 'collaboration',
     'process', 'workflow', 'efficiency', 'productivity', 'quality', 'standard',
     'compliance', 'regulation', 'security', 'risk', 'analysis', 'reporting',
-    
+
     // Modern workplace terms
     'remote', 'hybrid', 'cross-functional', 'multidisciplinary', 'diverse',
     'inclusive', 'sustainability', 'digital transformation', 'automation',
@@ -361,7 +383,7 @@ export class AtsService {
     private atsUsageRepository: Repository<AtsUsage>,
     @InjectRepository(AtsCheck)
     private atsCheckRepository: Repository<AtsCheck>,
-  ) {}
+  ) { }
 
 
   async checkUsageLimit(userId: string): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
@@ -434,7 +456,7 @@ export class AtsService {
 
     try {
       let text = '';
-      
+
       if (file.mimetype === 'application/pdf') {
         try {
           text = await extractTextFromPdf(file.buffer);
@@ -487,18 +509,18 @@ export class AtsService {
     const matchedKeywords = this.ATS_KEYWORDS.filter(keyword => {
       const keywordLower = keyword.toLowerCase();
       // Check for exact match or as part of a word
-      return lowerText.includes(keywordLower) || 
-             new RegExp(`\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(lowerText);
+      return lowerText.includes(keywordLower) ||
+        new RegExp(`\\b${keywordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(lowerText);
     });
     const keywordMatches = matchedKeywords.length;
     const totalKeywords = this.ATS_KEYWORDS.length;
 
     // Detailed analysis metrics
     // Keyword density: number of matched keywords per 1000 words
-    const keywordDensity = wordCount > 0 
-      ? Math.round((keywordMatches / wordCount) * 1000 * 100) / 100 
+    const keywordDensity = wordCount > 0
+      ? Math.round((keywordMatches / wordCount) * 1000 * 100) / 100
       : 0; // per 1000 words
-    
+
     // Section completeness (0-100)
     const sections = {
       contact: /email|phone|contact|address|mobile|telephone/i.test(resumeText),
@@ -676,38 +698,49 @@ export class AtsService {
     };
   }
 
-  // Premium enhancement features
+  // Premium enhancement features with grammar and typography analysis
   async generatePremiumEnhancements(resumeText: string, checkResult: AtsCheckResult): Promise<AtsCheckResult['premiumFeatures']> {
     const lowerText = resumeText.toLowerCase();
-    const words = resumeText.split(/\s+/).filter(word => word.length > 0);
 
     // Find missing important keywords from comprehensive ATS keywords
     const missingKeywords: string[] = [];
     const foundKeywords = new Set<string>();
-    
+
     this.ATS_KEYWORDS.forEach(keyword => {
       const keywordLower = keyword.toLowerCase();
       if (lowerText.includes(keywordLower)) {
         foundKeywords.add(keywordLower);
       } else {
-        // Only suggest high-value keywords
         if (this.isHighValueKeyword(keywordLower)) {
           missingKeywords.push(keyword);
         }
       }
     });
 
-    // Generate optimized keywords (prioritized by importance)
+    // Generate optimized keywords
     const optimizedKeywords = this.generateOptimizedKeywords(lowerText, missingKeywords.slice(0, 20));
 
-    // General ATS optimization suggestions
+    // Industry suggestions
     const industrySuggestions = this.generateIndustrySuggestions(checkResult);
 
-    // Resume optimization tips
+    // Optimization tips
     const optimizationTips = this.generateOptimizationTips(checkResult, resumeText);
 
-    // Keyword replacement suggestions
+    // Keyword replacements
     const keywordReplacements = this.generateKeywordReplacements(resumeText, lowerText);
+
+    // NEW: Grammar analysis using write-good
+    const grammarIssues = this.analyzeGrammar(resumeText);
+
+    // NEW: Typography analysis
+    const typographyAnalysis = this.analyzeTypography(resumeText);
+
+    // Calculate overall quality score (for 95%+ ATS target)
+    const overallQualityScore = this.calculateOverallQuality(
+      checkResult,
+      grammarIssues.length,
+      typographyAnalysis.score
+    );
 
     return {
       optimizedKeywords: optimizedKeywords.slice(0, 30),
@@ -715,7 +748,132 @@ export class AtsService {
       resumeOptimizationTips: optimizationTips,
       missingKeywords: missingKeywords.slice(0, 25),
       keywordReplacements: keywordReplacements.slice(0, 15),
+      grammarIssues: grammarIssues.slice(0, 20),
+      typographyAnalysis,
+      overallQualityScore,
     };
+  }
+
+  // Grammar analysis using write-good
+  private analyzeGrammar(text: string): Array<{ text: string; reason: string; index: number; offset: number }> {
+    if (!writeGood) {
+      return [];
+    }
+
+    try {
+      const suggestions = writeGood(text, {
+        passive: true,        // Check for passive voice
+        illusion: true,       // Check for lexical illusions
+        so: true,             // Check for "so" at beginning
+        thereIs: true,        // Check for "there is/are"
+        weasel: true,         // Check for weasel words
+        adverb: true,         // Check for adverbs
+        tooWordy: true,       // Check for wordy phrases
+        cliches: true,        // Check for clichés
+      });
+
+      return suggestions.map((s: any) => ({
+        text: text.substring(s.index, s.index + s.offset),
+        reason: s.reason || 'Consider revising for clarity',
+        index: s.index,
+        offset: s.offset,
+      }));
+    } catch (error) {
+      console.error('Grammar analysis error:', error);
+      return [];
+    }
+  }
+
+  // Typography and formatting analysis
+  private analyzeTypography(text: string): { score: number; issues: string[]; recommendations: string[] } {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+    let score = 100;
+
+    // Check line length consistency
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    const avgLineLength = lines.reduce((sum, l) => sum + l.length, 0) / Math.max(lines.length, 1);
+
+    if (avgLineLength > 120) {
+      issues.push('Some lines are too long (>120 characters)');
+      recommendations.push('Break long lines for better readability');
+      score -= 10;
+    }
+
+    // Check for ALL CAPS sections (poor typography)
+    const capsCount = (text.match(/[A-Z]{5,}/g) || []).length;
+    if (capsCount > 5) {
+      issues.push('Excessive use of ALL CAPS');
+      recommendations.push('Use title case for headers instead of ALL CAPS');
+      score -= 10;
+    }
+
+    // Check for bullet point usage
+    const hasBullets = /[•\-\*]\s/.test(text);
+    if (!hasBullets) {
+      issues.push('No bullet points detected');
+      recommendations.push('Use bullet points to make achievements scannable');
+      score -= 15;
+    }
+
+    // Check for section headers
+    const commonHeaders = ['experience', 'education', 'skills', 'summary', 'objective', 'work history', 'qualifications'];
+    const foundHeaders = commonHeaders.filter(h => text.toLowerCase().includes(h));
+    if (foundHeaders.length < 3) {
+      issues.push('Missing standard section headers');
+      recommendations.push('Add clear section headers: Experience, Education, Skills');
+      score -= 15;
+    }
+
+    // Check for consistent date formatting
+    const datePatterns = [
+      /\d{4}\s*-\s*\d{4}/g,           // 2020-2023
+      /\d{4}\s*-\s*present/gi,         // 2020-Present
+      /\w+\s+\d{4}\s*-\s*\w+\s+\d{4}/g, // Jan 2020 - Dec 2023
+    ];
+    const hasConsistentDates = datePatterns.some(p => (text.match(p) || []).length >= 2);
+    if (!hasConsistentDates) {
+      issues.push('Inconsistent or missing date formatting');
+      recommendations.push('Use consistent date format (e.g., "Jan 2020 - Dec 2023")');
+      score -= 10;
+    }
+
+    // Check for contact information
+    const hasEmail = /[\w.+-]+@[\w-]+\.[\w.-]+/.test(text);
+    const hasPhone = /[\d\s\-\(\)]{10,}/.test(text);
+    if (!hasEmail || !hasPhone) {
+      issues.push('Missing contact information');
+      recommendations.push('Include email and phone number at the top');
+      score -= 15;
+    }
+
+    // Check for proper spacing
+    const doubleSpaces = (text.match(/  +/g) || []).length;
+    if (doubleSpaces > 10) {
+      issues.push('Inconsistent spacing detected');
+      recommendations.push('Remove extra spaces for cleaner formatting');
+      score -= 5;
+    }
+
+    // Ensure score doesn't go below 0
+    score = Math.max(0, score);
+
+    return { score, issues, recommendations };
+  }
+
+  // Calculate overall quality score (targeting 95%+)
+  private calculateOverallQuality(
+    checkResult: AtsCheckResult,
+    grammarIssueCount: number,
+    typographyScore: number
+  ): number {
+    const atsScore = checkResult.score;
+    const grammarPenalty = Math.min(grammarIssueCount * 2, 20); // Max 20 point penalty
+
+    // Weighted average: ATS (50%), Typography (30%), Grammar (20%)
+    const overallScore = (atsScore * 0.5) + (typographyScore * 0.3) + ((100 - grammarPenalty) * 0.2);
+
+    return Math.round(Math.max(0, Math.min(100, overallScore)));
   }
 
   private isHighValueKeyword(keyword: string): boolean {
@@ -753,7 +911,7 @@ export class AtsService {
     checkResult: AtsCheckResult
   ): string[] {
     const suggestions: string[] = [];
-    
+
     // General ATS optimization advice
     if (checkResult.detailedAnalysis.technicalSkills < 50) {
       suggestions.push('Add more technical skills relevant to your field to improve ATS matching');

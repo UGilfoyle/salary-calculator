@@ -4,15 +4,19 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: #fafafa;
+  background: #0f172a;
+  background-image: 
+    radial-gradient(ellipse at 30% 20%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
 }
 
 .login-card {
-  background: white;
-  border-radius: 20px;
-  padding: 3rem 2.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.1);
   max-width: 420px;
   width: 100%;
   animation: fadeIn 0.4s ease-out;
@@ -37,23 +41,24 @@
 .sparkle-icon {
   display: inline-flex;
   padding: 0.75rem;
-  background: #111827;
-  color: white;
+  background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+  color: #0f172a;
   border-radius: 12px;
   margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
 }
 
 .login-header h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #111827;
+  color: #f8fafc;
   margin-bottom: 0.5rem;
   letter-spacing: -0.5px;
 }
 
 .login-subtitle {
-  font-size: 0.95rem;
-  color: #6b7280;
+  font-size: 0.9rem;
+  color: #94a3b8;
   font-weight: 400;
 }
 
@@ -65,8 +70,8 @@
 
 .auth-toggle {
   display: flex;
-  gap: 0.5rem;
-  background: #f3f4f6;
+  gap: 0.25rem;
+  background: #1e293b;
   padding: 0.25rem;
   border-radius: 10px;
 }
@@ -80,14 +85,17 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #6b7280;
+  color: #94a3b8;
   font-size: 0.9rem;
 }
 
 .toggle-btn.active {
-  background: white;
-  color: #111827;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: #334155;
+  color: #f8fafc;
+}
+
+.toggle-btn:hover:not(.active) {
+  color: #f8fafc;
 }
 
 .social-login-section {
@@ -103,27 +111,24 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: white;
-  border: 1.5px solid #e5e7eb;
+  background: #f8fafc;
+  border: none;
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #374151;
+  color: #1e293b;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .google-login-btn:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #e2e8f0;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .google-login-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .google-login-btn svg {
@@ -134,7 +139,7 @@
   display: flex;
   align-items: center;
   text-align: center;
-  color: #9ca3af;
+  color: #64748b;
   font-size: 0.85rem;
 }
 
@@ -142,7 +147,7 @@
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .divider span {
@@ -166,40 +171,46 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
-  color: #374151;
+  color: #f8fafc;
   font-size: 0.875rem;
 }
 
 .form-group label svg {
-  color: #6b7280;
+  color: #22d3ee;
 }
 
 .form-group input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1.5px solid #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 10px;
   font-size: 0.95rem;
   transition: all 0.2s ease;
   font-family: inherit;
-  color: #111827;
+  color: #f8fafc;
+  background: #1e293b;
+}
+
+.form-group input::placeholder {
+  color: #64748b;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #111827;
-  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
+  background: #334155;
 }
 
 .form-group input:hover {
-  border-color: #d1d5db;
+  border-color: rgba(148, 163, 184, 0.4);
 }
 
 .email-submit-btn {
   width: 100%;
   padding: 0.875rem;
-  background: #111827;
-  color: white;
+  background: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
+  color: #0f172a;
   border: none;
   border-radius: 10px;
   font-size: 0.95rem;
@@ -207,12 +218,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 0.5rem;
+  box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
 }
 
 .email-submit-btn:hover:not(:disabled) {
-  background: #1f2937;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(34, 211, 238, 0.4);
 }
 
 .email-submit-btn:disabled {
@@ -221,20 +232,20 @@
 }
 
 .error-message {
-  background: #fef2f2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
   padding: 0.875rem;
   border-radius: 10px;
   font-size: 0.875rem;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.2);
   text-align: center;
 }
 
 .github-login-btn {
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: #24292e;
-  color: white;
+  background: #f8fafc;
+  color: #1e293b;
   border: none;
   border-radius: 10px;
   font-size: 0.95rem;
@@ -248,9 +259,9 @@
 }
 
 .github-login-btn:hover {
-  background: #1a1e22;
+  background: #e2e8f0;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .github-login-btn:active {
@@ -263,7 +274,7 @@
   gap: 0.75rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .feature-item {
@@ -271,10 +282,11 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: #f9fafb;
+  background: #1e293b;
   border-radius: 8px;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .feature-emoji {
@@ -287,6 +299,6 @@
   }
 
   .login-header h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 }

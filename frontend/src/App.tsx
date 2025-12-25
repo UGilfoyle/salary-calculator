@@ -89,13 +89,13 @@ function App() {
         try {
           // Parse user data before cleaning URL
           const userData = JSON.parse(decodeURIComponent(userParam))
-          
+
           // Immediately clean URL to prevent token exposure
           window.history.replaceState({}, document.title, '/')
-          
+
           // Login with the token and user data
           login(tokenParam, userData)
-          
+
           // Use setTimeout to ensure state is saved before redirect
           setTimeout(() => {
             // Redirect to home page to ensure clean URL (only if still on callback)
@@ -137,13 +137,13 @@ function App() {
           axios.get(`${API_BASE_URL}/api/common/designations`),
         ])
         const allCities = citiesRes.data.cities || []
-        
+
         // Separate top 10 cities from the rest
         const top10 = allCities.slice(0, 10)
         const rest = allCities.slice(10)
         setTopCities(top10)
         setOtherCities(rest)
-        
+
         setCompanies(companiesRes.data.companies || [])
         setDesignations(designationsRes.data.designations || [])
       } catch (err) {
@@ -371,168 +371,168 @@ function App() {
                     <p>Loading cities, companies, and designations...</p>
                   </div>
                 ) : (
-                <form onSubmit={handleSubmit} className="form-card">
-                  <div className="form-section">
-                    <label htmlFor="ctc">
-                      <DollarSign size={20} />
-                      CTC (Cost to Company) *
-                    </label>
-                    <input
-                      id="ctc"
-                      type="number"
-                      placeholder="Enter your annual CTC"
-                      value={formData.ctc}
-                      onChange={(e) => setFormData({ ...formData, ctc: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-section">
-                    <label htmlFor="city">
-                      <MapPin size={20} />
-                      City *
-                    </label>
-                    <select
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      required
-                    >
-                      <option value="">Select your city</option>
-                      {topCities.length > 0 && (
-                        <>
-                          <optgroup label="🏙️ Top Cities">
-                            {topCities.map(city => (
-                              <option key={city} value={city}>{city}</option>
-                            ))}
-                          </optgroup>
-                        </>
-                      )}
-                      {otherCities.length > 0 && (
-                        <>
-                          <optgroup label="📍 Other Cities">
-                            {otherCities.map(city => (
-                              <option key={city} value={city}>{city}</option>
-                            ))}
-                          </optgroup>
-                        </>
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="form-section">
-                    <label htmlFor="company">
-                      <Building2 size={20} />
-                      Company (Optional)
-                    </label>
-                    <input
-                      id="company"
-                      type="text"
-                      list="companies-list"
-                      placeholder="Type or select company name"
-                      value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    />
-                    <datalist id="companies-list">
-                      {companies.map(company => (
-                        <option key={company} value={company} />
-                      ))}
-                    </datalist>
-                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      Company-specific calculations may apply
-                    </small>
-                  </div>
-
-                  <div className="form-section">
-                    <label htmlFor="designation">
-                      <User size={20} />
-                      Designation/Position (Optional)
-                    </label>
-                    <input
-                      id="designation"
-                      type="text"
-                      list="designations-list"
-                      placeholder="Type or select your designation"
-                      value={formData.designation}
-                      onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                    />
-                    <datalist id="designations-list">
-                      {designations.map(designation => (
-                        <option key={designation} value={designation} />
-                      ))}
-                    </datalist>
-                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      Your job title or role
-                    </small>
-                  </div>
-
-                  <div className="form-section">
-                    <label htmlFor="isRelocation" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <form onSubmit={handleSubmit} className="form-card">
+                    <div className="form-section">
+                      <label htmlFor="ctc">
+                        <DollarSign size={20} />
+                        CTC (Cost to Company) *
+                      </label>
                       <input
-                        id="isRelocation"
-                        type="checkbox"
-                        checked={formData.isRelocation}
-                        onChange={(e) => setFormData({ ...formData, isRelocation: e.target.checked, relocationAllowance: e.target.checked ? formData.relocationAllowance : '' })}
-                        style={{ width: 'auto', cursor: 'pointer' }}
-                      />
-                      <Plane size={20} />
-                      <span>Relocation Package</span>
-                    </label>
-                    {formData.isRelocation && (
-                      <input
-                        id="relocationAllowance"
+                        id="ctc"
                         type="number"
-                        placeholder="Enter relocation allowance (e.g., 50000)"
-                        value={formData.relocationAllowance}
-                        onChange={(e) => setFormData({ ...formData, relocationAllowance: e.target.value })}
-                        style={{ marginTop: '0.5rem' }}
+                        placeholder="Enter your annual CTC"
+                        value={formData.ctc}
+                        onChange={(e) => setFormData({ ...formData, ctc: e.target.value })}
+                        required
                       />
-                    )}
-                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      One-time relocation allowance (part of CTC, not monthly salary)
-                    </small>
-                  </div>
+                    </div>
 
-                  <div className="form-section">
-                    <label htmlFor="variablePay">
-                      <TrendingUp size={20} />
-                      Variable Pay (Annual, Optional)
-                    </label>
-                    <input
-                      id="variablePay"
-                      type="number"
-                      placeholder="Enter variable pay/bonus (e.g., 50000)"
-                      value={formData.variablePay}
-                      onChange={(e) => setFormData({ ...formData, variablePay: e.target.value })}
-                    />
-                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      Part of CTC but not included in monthly salary
-                    </small>
-                  </div>
+                    <div className="form-section">
+                      <label htmlFor="city">
+                        <MapPin size={20} />
+                        City *
+                      </label>
+                      <select
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        required
+                      >
+                        <option value="">Select your city</option>
+                        {topCities.length > 0 && (
+                          <>
+                            <optgroup label="🏙️ Top Cities">
+                              {topCities.map(city => (
+                                <option key={city} value={city}>{city}</option>
+                              ))}
+                            </optgroup>
+                          </>
+                        )}
+                        {otherCities.length > 0 && (
+                          <>
+                            <optgroup label="📍 Other Cities">
+                              {otherCities.map(city => (
+                                <option key={city} value={city}>{city}</option>
+                              ))}
+                            </optgroup>
+                          </>
+                        )}
+                      </select>
+                    </div>
 
-                  <div className="form-section">
-                    <label htmlFor="insurance">
-                      <Shield size={20} />
-                      Insurance (Annual, Optional)
-                    </label>
-                    <input
-                      id="insurance"
-                      type="number"
-                      placeholder="Enter insurance premium (e.g., 15000)"
-                      value={formData.insurance}
-                      onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
-                    />
-                    <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                      Health/Life insurance premiums (part of CTC, not monthly salary)
-                    </small>
-                  </div>
+                    <div className="form-section">
+                      <label htmlFor="company">
+                        <Building2 size={20} />
+                        Company (Optional)
+                      </label>
+                      <input
+                        id="company"
+                        type="text"
+                        list="companies-list"
+                        placeholder="Type or select company name"
+                        value={formData.company}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      />
+                      <datalist id="companies-list">
+                        {companies.map(company => (
+                          <option key={company} value={company} />
+                        ))}
+                      </datalist>
+                      <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                        Company-specific calculations may apply
+                      </small>
+                    </div>
 
-                  {error && <div className="error-message">{error}</div>}
+                    <div className="form-section">
+                      <label htmlFor="designation">
+                        <User size={20} />
+                        Designation/Position (Optional)
+                      </label>
+                      <input
+                        id="designation"
+                        type="text"
+                        list="designations-list"
+                        placeholder="Type or select your designation"
+                        value={formData.designation}
+                        onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                      />
+                      <datalist id="designations-list">
+                        {designations.map(designation => (
+                          <option key={designation} value={designation} />
+                        ))}
+                      </datalist>
+                      <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                        Your job title or role
+                      </small>
+                    </div>
 
-                  <button type="submit" className="submit-btn" disabled={loading || loadingData}>
-                    {loading ? 'Calculating...' : 'Calculate Salary'}
-                  </button>
-                </form>
+                    <div className="form-section">
+                      <label htmlFor="isRelocation" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <input
+                          id="isRelocation"
+                          type="checkbox"
+                          checked={formData.isRelocation}
+                          onChange={(e) => setFormData({ ...formData, isRelocation: e.target.checked, relocationAllowance: e.target.checked ? formData.relocationAllowance : '' })}
+                          style={{ width: 'auto', cursor: 'pointer' }}
+                        />
+                        <Plane size={20} />
+                        <span>Relocation Package</span>
+                      </label>
+                      {formData.isRelocation && (
+                        <input
+                          id="relocationAllowance"
+                          type="number"
+                          placeholder="Enter relocation allowance (e.g., 50000)"
+                          value={formData.relocationAllowance}
+                          onChange={(e) => setFormData({ ...formData, relocationAllowance: e.target.value })}
+                          style={{ marginTop: '0.5rem' }}
+                        />
+                      )}
+                      <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                        One-time relocation allowance (part of CTC, not monthly salary)
+                      </small>
+                    </div>
+
+                    <div className="form-section">
+                      <label htmlFor="variablePay">
+                        <TrendingUp size={20} />
+                        Variable Pay (Annual, Optional)
+                      </label>
+                      <input
+                        id="variablePay"
+                        type="number"
+                        placeholder="Enter variable pay/bonus (e.g., 50000)"
+                        value={formData.variablePay}
+                        onChange={(e) => setFormData({ ...formData, variablePay: e.target.value })}
+                      />
+                      <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                        Part of CTC but not included in monthly salary
+                      </small>
+                    </div>
+
+                    <div className="form-section">
+                      <label htmlFor="insurance">
+                        <Shield size={20} />
+                        Insurance (Annual, Optional)
+                      </label>
+                      <input
+                        id="insurance"
+                        type="number"
+                        placeholder="Enter insurance premium (e.g., 15000)"
+                        value={formData.insurance}
+                        onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
+                      />
+                      <small style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                        Health/Life insurance premiums (part of CTC, not monthly salary)
+                      </small>
+                    </div>
+
+                    {error && <div className="error-message">{error}</div>}
+
+                    <button type="submit" className="submit-btn" disabled={loading || loadingData}>
+                      {loading ? 'Calculating...' : 'Calculate Salary'}
+                    </button>
+                  </form>
                 )}
               </div>
             </>

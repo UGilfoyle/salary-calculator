@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Smartphone, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
+import { X, Smartphone, CheckCircle, AlertCircle, Copy, QrCode } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import './UPIPayment.css';
@@ -29,11 +29,36 @@ export default function UPIPayment({
     merchantName
 }: UPIPaymentProps) {
     const { token } = useAuth();
-    const [step, setStep] = useState<'details' | 'processing' | 'success' | 'failed'>('details');
+    const [step, setStep] = useState<'details' | 'confirm' | 'success' | 'failed'>('details');
     const [copied, setCopied] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
-    const [verifying, setVerifying] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(600);
+    const [confirming, setConfirming] = useState(false);
     const [error, setError] = useState<string>('');
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+    const [transactionId, setTransactionId] = useState('');
+
+    // Fetch QR code on mount
+    useEffect(() => {
+        const fetchQRCode = async () => {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/api/payment/qr-code`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob',
+                });
+                const url = URL.createObjectURL(response.data);
+                setQrCodeUrl(url);
+            } catch (err) {
+                console.log('QR code not available, using UPI link instead');
+            }
+        };
+        fetchQRCode();
+
+        return () => {
+            if (qrCodeUrl) {
+                URL.revokeObjectURL(qrCodeUrl);
+            }
+        };
+    }, [token]);
 
     // Countdown timer
     useEffect(() => {
@@ -57,73 +82,33 @@ export default function UPIPayment({
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Mask UPI ID for display: show first 4 characters and domain
-    // e.g., 8979594537@yescred -> 8979****@yescred
-    const maskUPIId = (upiId: string): string => {
-        const parts = upiId.split('@');
-        if (parts.length === 2) {
-            const username = parts[0];
-            const domain = parts[1];
-            if (username.length > 4) {
-                return `${username.substring(0, 4)}${'*'.repeat(Math.min(username.length - 4, 6))}@${domain}`;
-            }
-            return `${username.substring(0, 2)}${'*'.repeat(Math.max(username.length - 2, 2))}@${domain}`;
-        }
-        // Fallback: mask middle part
-        if (upiId.length > 8) {
-            return `${upiId.substring(0, 4)}${'*'.repeat(upiId.length - 8)}${upiId.substring(upiId.length - 4)}`;
-        }
-        return upiId;
-    };
-
-    // Pre-compute masked UPI ID to ensure it's used
-    const maskedUPIId = maskUPIId(upiId);
-
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const initiateUPI = () => {
-        // Create UPI payment URL
-        const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Payment for Order ${orderId}`)}`;
-
-        // Try to open UPI app
+    const openUPIApp = () => {
+        const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(merchantName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`Premium Features - ${orderId}`)}`;
         window.location.href = upiUrl;
-
-        // Show processing state
-        setStep('processing');
     };
 
-    const handleVerifyPayment = async () => {
-        setVerifying(true);
+    const handleConfirmPayment = async () => {
+        setConfirming(true);
         setError('');
 
         try {
-            // First verify payment (marks as processing)
-            await axios.post(
-                `${API_BASE_URL}/api/payment/verify-upi`,
-                {
-                    orderId: orderId,
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-
-            // Then confirm payment (marks as completed)
-            const confirmResponse = await axios.post(
+            // Confirm payment with optional transaction ID
+            const response = await axios.post(
                 `${API_BASE_URL}/api/payment/confirm-payment`,
                 {
                     orderId: orderId,
+                    transactionId: transactionId || undefined
                 },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            if (confirmResponse.data.success) {
+            if (response.data.success) {
                 setStep('success');
                 setTimeout(() => {
                     onSuccess();
@@ -133,10 +118,10 @@ export default function UPIPayment({
                 setStep('failed');
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to verify payment. Please try again.');
+            setError(err.response?.data?.message || 'Failed to confirm payment. Please try again.');
             setStep('failed');
         } finally {
-            setVerifying(false);
+            setConfirming(false);
         }
     };
 
@@ -150,126 +135,141 @@ export default function UPIPayment({
                 {step === 'details' && (
                     <div className="payment-content">
                         <div className="payment-header">
-                            <Smartphone size={48} className="payment-icon" />
-                            <h2>Pay via UPI</h2>
-                            <p className="payment-amount">₹{amount}</p>
+                            <div className="payment-icon-wrapper">
+                                <Smartphone size={32} />
+                            </div>
+                            <h2>Pay ₹{amount}</h2>
+                            <span className="discount-tag">75% OFF</span>
                         </div>
 
-                        <div className="payment-details">
-                            <div className="detail-row">
-                                <span className="detail-label">Order ID:</span>
-                                <span className="detail-value">{orderId}</span>
+                        {/* QR Code Section */}
+                        {qrCodeUrl && (
+                            <div className="qr-section">
+                                <div className="qr-header">
+                                    <QrCode size={18} />
+                                    <span>Scan to Pay</span>
+                                </div>
+                                <img src={qrCodeUrl} alt="UPI QR Code" className="qr-image" />
+                                <p className="qr-hint">Use GPay, PhonePe, or Paytm</p>
                             </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Amount:</span>
-                                <span className="detail-value">₹{amount}</span>
+                        )}
+
+                        {/* Payment Info */}
+                        <div className="payment-info">
+                            <div className="info-row">
+                                <span className="info-label">Amount</span>
+                                <span className="info-value amount">₹{amount}</span>
                             </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Merchant:</span>
-                                <span className="detail-value">{merchantName}</span>
+                            <div className="info-row">
+                                <span className="info-label">UPI ID</span>
+                                <div className="upi-copy-row">
+                                    <span className="info-value">{upiId}</span>
+                                    <button onClick={() => copyToClipboard(upiId)} className="copy-btn">
+                                        {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="upi-section">
-                            <h3>UPI Details</h3>
-                            <div className="upi-id-box">
-                                <span className="upi-id" title={upiId}>
-                                    {maskedUPIId}
-                                </span>
-                                <button
-                                    onClick={() => copyToClipboard(upiId)}
-                                    className="copy-btn"
-                                    title="Copy Full UPI ID"
-                                >
-                                    {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
-                                </button>
-                            </div>
-                            <p className="upi-hint">
-                                {copied ? '✓ UPI ID copied! Paste it in your UPI app' : 'Click copy button to copy full UPI ID and pay using any UPI app'}
-                            </p>
-                        </div>
+                        {copied && (
+                            <div className="copied-toast">✓ UPI ID copied!</div>
+                        )}
 
-                        <div className="timer-section">
-                            <AlertCircle size={20} />
-                            <span>Complete payment within {formatTime(timeLeft)}</span>
+                        <div className="timer-bar">
+                            <AlertCircle size={16} />
+                            <span>Complete within {formatTime(timeLeft)}</span>
                         </div>
 
                         {error && (
-                            <div className="payment-error">
-                                <AlertCircle size={18} />
+                            <div className="error-bar">
+                                <AlertCircle size={16} />
                                 {error}
                             </div>
                         )}
 
-                        <div className="payment-actions">
-                            <button onClick={initiateUPI} className="pay-btn primary" disabled={verifying}>
-                                <ExternalLink size={20} />
+                        <div className="action-buttons">
+                            <button onClick={openUPIApp} className="open-app-btn">
                                 Open UPI App
+                            </button>
+                            <button onClick={() => setStep('confirm')} className="confirm-btn">
+                                I've Paid ✓
                             </button>
                         </div>
 
-                        <div className="payment-instructions">
-                            <h4>How to Pay:</h4>
-                            <ol>
-                                <li>Click "Open UPI App" or copy the UPI ID</li>
-                                <li>Open your UPI app (GPay, PhonePe, Paytm, etc.)</li>
-                                <li>Enter the UPI ID and amount (₹{amount})</li>
-                                <li>Complete the payment in your UPI app</li>
-                                <li>Return here and click "I've Paid" to verify</li>
-                            </ol>
-                        </div>
+                        <p className="help-text">
+                            After paying, click "I've Paid" to activate premium features
+                        </p>
                     </div>
                 )}
 
-                {step === 'processing' && (
-                    <div className="payment-content processing">
-                        <div className="processing-animation">
-                            <div className="spinner"></div>
+                {step === 'confirm' && (
+                    <div className="payment-content confirm-step">
+                        <div className="confirm-icon">
+                            <CheckCircle size={48} />
                         </div>
-                        <h2>Complete Payment</h2>
-                        <p>Please complete the payment in your UPI app</p>
+                        <h2>Confirm Payment</h2>
+                        <p>Did you complete the payment of ₹{amount}?</p>
+
+                        {/* Transaction ID - Optional but helps with verification */}
+                        <div className="transaction-input-section">
+                            <label htmlFor="txnId">Transaction ID (optional)</label>
+                            <input
+                                type="text"
+                                id="txnId"
+                                placeholder="Enter UPI reference number"
+                                value={transactionId}
+                                onChange={(e) => setTransactionId(e.target.value)}
+                                className="transaction-input"
+                            />
+                            <p className="input-hint">
+                                Adding this helps verify your payment faster
+                            </p>
+                        </div>
+
                         {error && (
-                            <div className="payment-error">
-                                <AlertCircle size={18} />
+                            <div className="error-bar">
+                                <AlertCircle size={16} />
                                 {error}
                             </div>
                         )}
-                        <div className="payment-actions">
+
+                        <div className="confirm-actions">
                             <button
-                                onClick={handleVerifyPayment}
-                                className="pay-btn secondary"
-                                disabled={verifying}
+                                onClick={handleConfirmPayment}
+                                className="yes-btn"
+                                disabled={confirming}
                             >
-                                {verifying ? (
-                                    <>
-                                        <div className="mini-spinner"></div>
-                                        Verifying...
-                                    </>
-                                ) : (
-                                    <>
-                                        <CheckCircle size={20} />
-                                        I've Paid
-                                    </>
-                                )}
+                                {confirming ? 'Verifying...' : 'Yes, I Paid'}
+                            </button>
+                            <button onClick={() => setStep('details')} className="no-btn">
+                                No, Go Back
                             </button>
                         </div>
                     </div>
                 )}
 
                 {step === 'success' && (
-                    <div className="payment-content success">
-                        <CheckCircle size={64} className="success-icon" />
+                    <div className="payment-content success-step">
+                        <div className="success-icon">
+                            <CheckCircle size={64} />
+                        </div>
                         <h2>Payment Successful!</h2>
-                        <p>Your payment has been verified. Premium features are now active.</p>
+                        <p>Premium features are now active for 30 days!</p>
                     </div>
                 )}
 
                 {step === 'failed' && (
-                    <div className="payment-content failed">
-                        <AlertCircle size={64} className="error-icon" />
-                        <h2>Payment Timeout</h2>
-                        <p>The payment window has expired. Please try again.</p>
-                        <button onClick={() => setStep('details')} className="pay-btn primary">
+                    <div className="payment-content failed-step">
+                        <div className="failed-icon">
+                            <AlertCircle size={64} />
+                        </div>
+                        <h2>{timeLeft === 0 ? 'Time Expired' : 'Something Went Wrong'}</h2>
+                        <p>{error || 'Please try again.'}</p>
+                        <button onClick={() => {
+                            setStep('details');
+                            setTimeLeft(600);
+                            setError('');
+                        }} className="retry-btn">
                             Try Again
                         </button>
                     </div>
@@ -278,4 +278,3 @@ export default function UPIPayment({
         </div>
     );
 }
-

@@ -16,11 +16,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../user/entities/user.entity';
 import { AtsService, AtsCheckResult } from './ats.service';
+import { AiEnhanceService } from './ai-enhance.service';
 import { memoryStorage } from 'multer';
 
 @Controller('api/ats')
 export class AtsController {
-    constructor(private readonly atsService: AtsService) { }
+    constructor(
+        private readonly atsService: AtsService,
+        private readonly aiEnhanceService: AiEnhanceService,
+    ) { }
 
     @Post('check')
     @UseGuards(JwtAuthGuard)
@@ -71,15 +75,28 @@ export class AtsController {
             // Parse file
             const resumeText = await this.atsService.parseFile(file);
 
-            // Check if user is premium
+            // Check if user is premium (including free trial until Feb 24, 2025)
             const now = new Date();
-            const isPremium = user.isPremium && 
-              user.premiumExpiresAt && 
-              user.premiumExpiresAt > now;
+            const freePremiumUntil = new Date('2025-02-24');
+            const isFreeTrial = now < freePremiumUntil;
+            const isPremium = isFreeTrial || (
+                user.isPremium &&
+                user.premiumExpiresAt &&
+                user.premiumExpiresAt > now
+            );
 
             // Check ATS
             const result = await this.atsService.checkAts(resumeText, isPremium);
             result.fileSize = file.size;
+
+            // AUTO-GENERATE PREMIUM FEATURES for premium users
+            if (isPremium) {
+                const premiumFeatures = await this.atsService.generatePremiumEnhancements(
+                    resumeText,
+                    result,
+                );
+                (result as any).premiumFeatures = premiumFeatures;
+            }
 
             // Save check result to database (including resume text for premium features)
             const savedCheck = await this.atsService.saveCheckResult(user.id, result, resumeText);
@@ -163,10 +180,69 @@ export class AtsController {
         };
     }
 
+    // AI Enhancement Endpoint
+    @Post('ai/enhance')
+    @UseGuards(JwtAuthGuard)
+    async aiEnhanceText(
+        @CurrentUser() user: User,
+        @Body() body: { text: string; type: 'bullet' | 'summary' | 'full' },
+    ) {
+        // Check if user is premium (free trial until Feb 24, 2025)
+        const now = new Date();
+        const freePremiumUntil = new Date('2025-02-24');
+        const isFreeTrial = now < freePremiumUntil;
+        const isPremium = isFreeTrial || (
+            user.isPremium &&
+            user.premiumExpiresAt &&
+            user.premiumExpiresAt > now
+        );
+
+        if (!isPremium) {
+            throw new ForbiddenException('AI enhancement is a premium feature');
+        }
+
+        if (!body.text || body.text.trim().length === 0) {
+            throw new BadRequestException('Text is required for enhancement');
+        }
+
+        return this.aiEnhanceService.enhanceResumeText(body.text, body.type || 'bullet');
+    }
+
+    // AI Generate Section Content
+    @Post('ai/generate')
+    @UseGuards(JwtAuthGuard)
+    async aiGenerateContent(
+        @CurrentUser() user: User,
+        @Body() body: {
+            sectionType: 'summary' | 'skills' | 'experience';
+            context: { title?: string; industry?: string };
+        },
+    ) {
+        // Check if user is premium (free trial until Feb 24, 2025)
+        const now = new Date();
+        const freePremiumUntil = new Date('2025-02-24');
+        const isFreeTrial = now < freePremiumUntil;
+        const isPremium = isFreeTrial || (
+            user.isPremium &&
+            user.premiumExpiresAt &&
+            user.premiumExpiresAt > now
+        );
+
+        if (!isPremium) {
+            throw new ForbiddenException('AI content generation is a premium feature');
+        }
+
+        const content = await this.aiEnhanceService.generateSectionContent(
+            body.sectionType,
+            body.context || {},
+        );
+
+        return { content };
+    }
+
     @Post('usage')
     @UseGuards(JwtAuthGuard)
     async getUsage(@CurrentUser() user: User) {
         return this.atsService.checkUsageLimit(user.id);
     }
 }
-
