@@ -862,7 +862,13 @@ export default function AtsChecker() {
             {/* Resume Builder Modal (Full Screen) */}
             {showResumeBuilder && (
                 <div className="resume-builder-overlay">
-                    <ResumeBuilder onClose={() => setShowResumeBuilder(false)} />
+                    <ResumeBuilder
+                        onClose={() => setShowResumeBuilder(false)}
+                        initialData={{
+                            name: user?.displayName || user?.username,
+                            email: user?.email
+                        }}
+                    />
                 </div>
             )}
         </div>

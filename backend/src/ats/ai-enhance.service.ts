@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
+import { HfInference } from '@huggingface/inference';
 
 export interface EnhancementResult {
     enhanced: string;
@@ -12,10 +12,10 @@ export interface EnhancementResult {
 export class AiEnhanceService {
     private readonly logger = new Logger(AiEnhanceService.name);
 
-    // Using HuggingFace Inference API - free tier
-    // You can use: mistralai/Mistral-7B-Instruct-v0.3 or HuggingFaceH4/zephyr-7b-beta
-    private readonly HF_API_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3';
-    private readonly HF_API_KEY = process.env.HUGGINGFACE_API_KEY || '';
+    // Using HuggingFace Inference SDK
+    private readonly MODEL = 'mistralai/Mistral-7B-Instruct-v0.3';
+    private readonly HF_API_KEY = process.env.HUGGINGFACE_API_KEY;
+    private readonly hf = new HfInference(this.HF_API_KEY);
 
     async enhanceResumeText(text: string, type: 'bullet' | 'summary' | 'full'): Promise<EnhancementResult> {
         if (!this.HF_API_KEY) {
@@ -26,28 +26,19 @@ export class AiEnhanceService {
         try {
             const prompt = this.buildPrompt(text, type);
 
-            const response = await axios.post(
-                this.HF_API_URL,
-                {
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 500,
-                        temperature: 0.7,
-                        top_p: 0.9,
-                        do_sample: true,
-                        return_full_text: false,
-                    },
+            const result = await this.hf.textGeneration({
+                model: this.MODEL,
+                inputs: prompt,
+                parameters: {
+                    max_new_tokens: 500,
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    do_sample: true,
+                    return_full_text: false,
                 },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${this.HF_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    timeout: 30000,
-                }
-            );
+            });
 
-            const generatedText = response.data[0]?.generated_text || '';
+            const generatedText = result.generated_text || '';
             return this.parseEnhancedResponse(generatedText, text);
         } catch (error) {
             this.logger.error('HuggingFace API error:', error);
@@ -235,27 +226,19 @@ Provide the improved version and list 3 key improvements made. [/INST]`;
         const prompt = this.buildSectionPrompt(sectionType, context);
 
         try {
-            const response = await axios.post(
-                this.HF_API_URL,
-                {
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 300,
-                        temperature: 0.8,
-                        top_p: 0.9,
-                    },
+            const result = await this.hf.textGeneration({
+                model: this.MODEL,
+                inputs: prompt,
+                parameters: {
+                    max_new_tokens: 300,
+                    temperature: 0.8,
+                    top_p: 0.9,
                 },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${this.HF_API_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    timeout: 30000,
-                }
-            );
+            });
 
-            return response.data[0]?.generated_text?.trim() || this.getFallbackContent(sectionType, context);
+            return result.generated_text.trim();
         } catch (error) {
+            this.logger.error('HuggingFace API error (section generation):', error);
             return this.getFallbackContent(sectionType, context);
         }
     }

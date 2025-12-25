@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Palette, Layout, Download, Wand2, FileDown, Loader2,
     GripVertical, List, ChevronDown, ChevronUp
@@ -183,10 +183,21 @@ const DEFAULT_DESIGN: DesignSettings = {
 
 interface ResumeBuilderProps {
     onClose?: () => void;
+    initialData?: {
+        name?: string;
+        email?: string;
+    };
 }
 
-export default function ResumeBuilder({ onClose }: ResumeBuilderProps) {
-    const [resume, setResume] = useState<ResumeData>(DEFAULT_RESUME);
+export default function ResumeBuilder({ onClose, initialData }: ResumeBuilderProps) {
+    const [resume, setResume] = useState<ResumeData>(() => ({
+        ...DEFAULT_RESUME,
+        personalInfo: {
+            ...DEFAULT_RESUME.personalInfo,
+            name: initialData?.name || DEFAULT_RESUME.personalInfo.name,
+            email: initialData?.email || DEFAULT_RESUME.personalInfo.email,
+        }
+    }));
     const [design, setDesign] = useState<DesignSettings>(DEFAULT_DESIGN);
     const [activePanel, setActivePanel] = useState<'templates' | 'design' | 'sections' | null>(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -474,7 +485,7 @@ export default function ResumeBuilder({ onClose }: ResumeBuilderProps) {
             </section>
         );
 
-        const sectionMap: Record<string, JSX.Element> = {
+        const sectionMap: Record<string, React.ReactNode> = {
             summary: summarySection,
             experience: experienceSection,
             education: educationSection,

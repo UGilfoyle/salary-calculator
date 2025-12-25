@@ -348,8 +348,9 @@
 }
 
 .resume-layout.sidebar-left .sidebar {
-    padding: 30px 20px;
+    padding: 30px 15px;
     color: white;
+    word-break: break-word;
 }
 
 .resume-layout.sidebar-left .main-content {
@@ -511,8 +512,9 @@
 .exp-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: baseline;
     margin-bottom: 8px;
+    gap: 16px;
 }
 
 .exp-role {
