@@ -203,7 +203,14 @@ export default function ResumeBuilder({ onClose, initialData }: ResumeBuilderPro
     const [isExporting, setIsExporting] = useState(false);
     const [isEnhancing, setIsEnhancing] = useState(false);
     const [draggedSection, setDraggedSection] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const resumeRef = useRef<HTMLDivElement>(null);
+
+    // Show toast notification
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
 
     // Get current template
     const currentTemplate = TEMPLATES.find(t => t.id === design.templateId) || TEMPLATES[0];
@@ -272,6 +279,11 @@ export default function ResumeBuilder({ onClose, initialData }: ResumeBuilderPro
         setIsEnhancing(true);
         try {
             const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('Please log in to use AI enhancement', 'error');
+                return;
+            }
+
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
             const response = await fetch(`${apiUrl}/api/ats/ai/enhance`, {
@@ -288,10 +300,17 @@ export default function ResumeBuilder({ onClose, initialData }: ResumeBuilderPro
 
             if (response.ok) {
                 const result = await response.json();
-                setResume(prev => ({ ...prev, summary: result.enhanced }));
+                if (result.enhanced) {
+                    setResume(prev => ({ ...prev, summary: result.enhanced }));
+                    showToast('✨ Summary enhanced with AI!', 'success');
+                }
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                showToast(errorData.message || 'Enhancement failed', 'error');
             }
         } catch (error) {
             console.error('AI Enhancement error:', error);
+            showToast('AI Enhancement failed. Please try again.', 'error');
         } finally {
             setIsEnhancing(false);
         }
@@ -763,6 +782,13 @@ export default function ResumeBuilder({ onClose, initialData }: ResumeBuilderPro
                     {renderResume()}
                 </div>
             </div>
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`toast-notification ${toast.type}`}>
+                    {toast.type === 'success' ? '✨' : '⚠️'} {toast.message}
+                </div>
+            )}
         </div>
     );
 }

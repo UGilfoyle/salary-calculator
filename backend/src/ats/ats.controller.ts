@@ -75,9 +75,9 @@ export class AtsController {
             // Parse file
             const resumeText = await this.atsService.parseFile(file);
 
-            // Check if user is premium (including free trial until Feb 24, 2025)
+            // Check if user is premium (free trial until March 31, 2025)
             const now = new Date();
-            const freePremiumUntil = new Date('2025-02-24');
+            const freePremiumUntil = new Date('2025-03-31');
             const isFreeTrial = now < freePremiumUntil;
             const isPremium = isFreeTrial || (
                 user.isPremium &&
@@ -180,27 +180,14 @@ export class AtsController {
         };
     }
 
-    // AI Enhancement Endpoint
+    // AI Enhancement Endpoint - FREE FOR ALL USERS until March 31, 2025
     @Post('ai/enhance')
     @UseGuards(JwtAuthGuard)
     async aiEnhanceText(
         @CurrentUser() user: User,
         @Body() body: { text: string; type: 'bullet' | 'summary' | 'full' },
     ) {
-        // Check if user is premium (free trial until Feb 24, 2025)
-        const now = new Date();
-        const freePremiumUntil = new Date('2025-02-24');
-        const isFreeTrial = now < freePremiumUntil;
-        const isPremium = isFreeTrial || (
-            user.isPremium &&
-            user.premiumExpiresAt &&
-            user.premiumExpiresAt > now
-        );
-
-        if (!isPremium) {
-            throw new ForbiddenException('AI enhancement is a premium feature');
-        }
-
+        // All users get AI enhancement for free until March 31, 2025
         if (!body.text || body.text.trim().length === 0) {
             throw new BadRequestException('Text is required for enhancement');
         }
@@ -208,7 +195,7 @@ export class AtsController {
         return this.aiEnhanceService.enhanceResumeText(body.text, body.type || 'bullet');
     }
 
-    // AI Generate Section Content
+    // AI Generate Section Content - FREE FOR ALL USERS until March 31, 2025
     @Post('ai/generate')
     @UseGuards(JwtAuthGuard)
     async aiGenerateContent(
@@ -218,20 +205,7 @@ export class AtsController {
             context: { title?: string; industry?: string };
         },
     ) {
-        // Check if user is premium (free trial until Feb 24, 2025)
-        const now = new Date();
-        const freePremiumUntil = new Date('2025-02-24');
-        const isFreeTrial = now < freePremiumUntil;
-        const isPremium = isFreeTrial || (
-            user.isPremium &&
-            user.premiumExpiresAt &&
-            user.premiumExpiresAt > now
-        );
-
-        if (!isPremium) {
-            throw new ForbiddenException('AI content generation is a premium feature');
-        }
-
+        // All users get AI generation for free until March 31, 2025
         const content = await this.aiEnhanceService.generateSectionContent(
             body.sectionType,
             body.context || {},

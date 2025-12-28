@@ -1,6 +1,6 @@
-import { Controller, Get, Req, Res, UseGuards, Post, Body } from '@nestjs/common';
+import { Controller, Get, Req, Res, UseGuards, Post, Body, Next } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -41,11 +41,23 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth() {
-    // Initiates Google OAuth flow
-    // If credentials are not configured, Google will reject the request
-    // The error will be handled by Passport's error handling
+  async googleAuth(@Req() req, @Res() res: Response, @Next() next) {
+    // Check if Google OAuth is configured BEFORE initiating the flow
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret || clientId === 'not-configured' || clientSecret === 'not-configured') {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      // Redirect to frontend with error message
+      return res.redirect(`${frontendUrl}?error=google_not_configured&message=${encodeURIComponent('Google Sign-In is not available. Please use GitHub or email/password to sign in.')}`);
+    }
+
+    // If configured, use Passport to initiate Google OAuth
+    const passport = require('passport');
+    passport.authenticate('google', {
+      scope: ['email', 'profile'],
+      session: false
+    })(req, res, next);
   }
 
   @Get('google/callback')
@@ -73,9 +85,9 @@ export class AuthController {
   async getProfile(@CurrentUser() user: User) {
     const now = new Date();
 
-    // FREE PREMIUM FOR ALL USERS - 60 DAY TRIAL
-    // Everyone gets premium features until Feb 24, 2025
-    const freePremiumUntil = new Date('2025-02-24');
+    // FREE PREMIUM FOR ALL USERS - EXTENDED TRIAL
+    // Everyone gets premium features until March 31, 2025 (no premium popups)
+    const freePremiumUntil = new Date('2025-03-31');
     const isFreeTrial = now < freePremiumUntil;
 
     const isPremiumActive = isFreeTrial || (

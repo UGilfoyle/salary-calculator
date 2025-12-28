@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Github, Sparkles, Mail, Lock, User } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,19 @@ export default function Login() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check for OAuth error in URL params (e.g., Google OAuth not configured)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorType = urlParams.get('error');
+    const errorMessage = urlParams.get('message');
+
+    if (errorType && errorMessage) {
+      setError(decodeURIComponent(errorMessage));
+      // Clean up URL to remove error params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleGitHubLogin = () => {
     // Debug: Log the environment variable

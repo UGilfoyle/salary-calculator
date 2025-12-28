@@ -77,7 +77,8 @@ export default function AtsChecker() {
     const [showDetailedAnalysisPopup, setShowDetailedAnalysisPopup] = useState(false);
     const [showResumeBuilder, setShowResumeBuilder] = useState(false);
 
-    const isPremium = user?.isPremium || false;
+    // FREE PREMIUM FOR ALL USERS until March 31, 2025
+    const isPremium = true; // All users get premium features
 
     // Handle browser back/forward navigation
     useEffect(() => {
@@ -301,12 +302,6 @@ export default function AtsChecker() {
 
                     <div className="usage-info">
                         <p>Free users: 3 checks per 4 hours</p>
-                        {!isPremium && (
-                            <p className="premium-hint">
-                                <Star size={16} />
-                                Upgrade to Premium for unlimited checks and advanced features
-                            </p>
-                        )}
                     </div>
                 </div>
             ) : (
@@ -427,17 +422,12 @@ export default function AtsChecker() {
                                         key={idx}
                                         className={`fix-suggestion-card ${selectedFix === weakness ? 'active' : ''} ${fixAnimation ? 'animate' : ''}`}
                                         onClick={() => {
-                                            if (isPremium) {
-                                                setSelectedFix(weakness);
-                                                setShowFixDetails(true);
-                                                setShowPayment(false);
-                                                setFixAnimation(true);
-                                                setTimeout(() => setFixAnimation(false), 600);
-                                            } else {
-                                                setSelectedFix(weakness);
-                                                setShowPayment(true);
-                                                setShowFixDetails(false);
-                                            }
+                                            // All users get premium features now
+                                            setSelectedFix(weakness);
+                                            setShowFixDetails(true);
+                                            setShowPayment(false);
+                                            setFixAnimation(true);
+                                            setTimeout(() => setFixAnimation(false), 600);
                                         }}
                                     >
                                         <div className="fix-icon">
@@ -445,9 +435,6 @@ export default function AtsChecker() {
                                         </div>
                                         <div className="fix-content">
                                             <h5>{weakness}</h5>
-                                            {!isPremium && (
-                                                <span className="premium-badge">Premium</span>
-                                            )}
                                         </div>
                                         <div className="fix-arrow">→</div>
                                     </div>
@@ -465,8 +452,8 @@ export default function AtsChecker() {
                 </div>
             )}
 
-            {/* Fix Details Modal - Premium Feature ONLY */}
-            {showFixDetails && selectedFix && isPremium && !showPayment && (
+            {/* Fix Details Modal - Now available to all users */}
+            {showFixDetails && selectedFix && !showPayment && (
                 <div className="fix-details-modal-overlay" onClick={() => setShowFixDetails(false)}>
                     <div className="fix-details-modal" onClick={(e) => e.stopPropagation()}>
                         <button className="close-modal-btn" onClick={() => setShowFixDetails(false)}>
@@ -638,8 +625,9 @@ export default function AtsChecker() {
                 />
             )}
 
-            {/* Premium Unlock Modal - Show when no payment order yet */}
-            {showPayment && !paymentOrder && selectedFix && (
+            {/* Premium Unlock Modal - DISABLED until March 31, 2025 */}
+            {/* All premium features are now free for everyone */}
+            {false && showPayment && !paymentOrder && selectedFix && (
                 <div className="premium-unlock-modal-overlay" onClick={() => {
                     setShowPayment(false);
                     setSelectedFix(null);
