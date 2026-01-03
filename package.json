@@ -1,0 +1,11 @@
+{
+  "name": "salary-calculator",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "build": "bun run --filter '*' build",
+    "dev:frontend": "bun run --filter frontend dev",
+    "dev:backend": "bun run --filter backend start:dev"
+  }
+}
