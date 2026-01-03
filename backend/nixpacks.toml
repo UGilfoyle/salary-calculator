@@ -2,11 +2,10 @@
 nixPkgs = ["nodejs-20_x"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["curl -fsSL https://bun.sh/install | bash", "~/.bun/bin/bun install"]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["~/.bun/bin/bun run build"]
 
 [start]
-cmd = "npm run start:prod"
-
+cmd = "node dist/main"
